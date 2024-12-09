@@ -370,6 +370,15 @@ set_file_perms() {
       continue
     fi
 
+    if [[ "${line}" =~ ^only_when_role ]]; then
+      local required_role="$(cut -d'=' -f2 <<< "${line}")"
+      log info "only_when_role=${required_role}"
+      if [ "${boot_role}" != "${required_role}" ]; then
+        log info 'Active boot role does not match file requirements, skipping file.'
+        return 0
+      fi
+    fi
+
     #global fso
     local mode_from_config owner_from_config group_from_config capability_from_config
     if ! read -r fso mode_from_config owner_from_config group_from_config capability_from_config <<<"${line}"; then
@@ -566,6 +575,24 @@ set_file_perms() {
   log info "END parsing config file: '${config_file}'"
 }
 
+read_boot_role() {
+  declare -g boot_role
+  local kernel_param_list
+  local kernel_param
+
+  boot_role=''
+  IFS=' ' read -a kernel_param_list < <(cat /proc/cmdline)
+  for kernel_param in "${kernel_param_list[@]}"; do
+    if [[ "${kernel_param}" =~ ^boot-role ]]; then
+      boot_role="$(cut -d'=' -f2 <<< "${kernel_param}")"
+    fi
+  done
+
+  if [ -z "${boot_role}" ]; then
+    boot_role='user'
+  fi
+}
+
 parse_config_folder() {
   touch "${store_dir}/private/passwd"
   chmod og-rwx "${store_dir}/private/passwd"
@@ -604,6 +631,7 @@ apply() {
   check_root
   make_store_dir
   sanity_tests
+  read_boot_role
   parse_config_folder
 
   log notice "\

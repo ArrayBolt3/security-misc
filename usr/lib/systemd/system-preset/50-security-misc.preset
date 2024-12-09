@@ -4,8 +4,8 @@
 ## https://forums.whonix.org/t/restrict-hardware-information-to-root-testers-wanted/8618
 disable hide-hardware-info.service
 
-## Disable for now until development finished / tested.
-disable permission-hardener.service
+## permission-hardener is now production-ready.
+enable permission-hardener.service
 
 ## Disable for now until development finished / tested.
 ## https://github.com/Kicksecure/security-misc/pull/152

@@ -53,6 +53,9 @@ case "$1" in
         ## /usr/share/glib-2.0/schemas/30_security-misc.gschema.override
         glib-compile-schemas /usr/share/glib-2.0/schemas || true
 
+	## state dir for security-misc
+	mkdir -p /var/lib/security-misc
+
         ## state dir for faillock
         mkdir -p /var/lib/security-misc/faillock
     ;;
@@ -94,6 +97,11 @@ boot." >&2
 fi
 
 /usr/libexec/security-misc/mmap-rnd-bits || true
+
+if [ ! -f '/var/lib/security-misc/permission-hardener-enabled-by-postinst' ]; then
+   systemctl enable permission-hardener.service
+   touch '/var/lib/security-misc/permission-hardener-enabled-by-postinst'
+fi
 
 true "INFO: debhelper beginning here."
 
