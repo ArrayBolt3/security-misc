@@ -7,17 +7,20 @@
 
 ## CodeQL manual build for the C sources in this repo.
 ##
-## The two C files use the genmkfile '#package-tag' filename
-## convention (see ci/codeql-prepare.sh). gcc accepts those paths
-## verbatim, so we hand them to the compiler unchanged - what matters
-## for the C/C++ extractor is that gcc sees and parses each
-## translation unit.
+## Delegates the actual gcc invocations to the upstream compile
+## helpers under usr/libexec/security-misc/. Those helpers also run
+## at install-time / first-run (out of build-fm-shim-backend and
+## emerg-shutdown). Single source of truth means CI cannot drift on
+## hardening flags vs runtime.
 ##
-## We compile to object files only ('-c'). No linking, no hardening
-## flags - those live at runtime in the install-time build scripts
-## (usr/libexec/security-misc/build-fm-shim-backend,
-## usr/libexec/security-misc/emerg-shutdown). CodeQL just needs the
-## front-end pass.
+## Source-tree prep:
+##
+## ci/codeql-prepare.sh has already symlinked '*.c#<tag>' to clean
+## '*.c' names by the time we run (the workflow runs prepare via
+## the reusable's pre-init hook). gcc selects its driver behavior
+## by file extension - a '.c#tag' source gets misclassified as a
+## linker script - so the symlink is required even though gcc
+## tolerates the tagged name in error messages.
 
 set -o errexit
 set -o nounset
@@ -27,27 +30,17 @@ set -o xtrace
 
 sudo --non-interactive apt-get update --error-on=any
 sudo --non-interactive apt-get install --yes --no-install-recommends \
-  build-essential pkg-config libdbus-1-dev libsystemd-dev linux-libc-dev
+  pkg-config libdbus-1-dev libsystemd-dev libc6-dev linux-libc-dev
 
 build_dir="$(mktemp -d)"
 trap 'rm -rf -- "${build_dir}"' EXIT
 
-## fm-shim-backend - dbus + systemd
-## NOTE: pkg-config subshells intentionally are not quoted; pkg-config
-## output is designed to be word-split by shells safely and would be
-## broken by quoting. Matches the pattern in
-## usr/libexec/security-misc/build-fm-shim-backend (see AGENTS.md
-## "pkg-config quoting in build script").
-# shellcheck disable=SC2046
-gcc -c \
-  -o "${build_dir}/fm-shim-backend.o" \
-  $(pkg-config --cflags dbus-1) \
-  $(pkg-config --cflags libsystemd) \
-  'usr/src/security-misc/fm-shim-backend.c#security-misc-shared'
+bash 'usr/libexec/security-misc/compile-fm-shim-backend#security-misc-shared' \
+  usr/src/security-misc/fm-shim-backend.c \
+  "${build_dir}/fm-shim-backend"
 
-## emerg-shutdown - libc + linux uapi only
-gcc -c \
-  -o "${build_dir}/emerg-shutdown.o" \
-  'usr/src/security-misc/emerg-shutdown.c#security-misc-shared'
+bash 'usr/libexec/security-misc/compile-emerg-shutdown#security-misc-shared' \
+  usr/src/security-misc/emerg-shutdown.c \
+  "${build_dir}/emerg-shutdown"
 
 ls -l -- "${build_dir}"

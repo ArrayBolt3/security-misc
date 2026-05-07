@@ -9,16 +9,22 @@
 ##
 ## This repo names installable files with a '#<package-tag>' suffix
 ## (Kicksecure/genmkfile convention - the suffix routes the file to
-## the correct Debian binary package at build time). CodeQL's Python
-## extractor discovers source files by the '.py' extension, so a file
-## literally named 'foo.py#security-misc-shared' is invisible to it.
+## the correct Debian binary package at build time). The suffix
+## breaks two CodeQL paths:
+##
+##   * Python extractor discovers source files by the '.py'
+##     extension; 'foo.py#security-misc-shared' is invisible.
+##   * gcc selects driver behavior by extension; 'foo.c#tag' is
+##     treated by ld as a linker script ("file format not
+##     recognized"). The compile helpers used by ci/codeql-build.sh
+##     receive their .c source by path argument, so a clean
+##     '.c'-extension symlink is required here too.
 ##
 ## Walk the tracked file list and create same-directory symlinks
-## without the '#tag' suffix so the extractor sees the source under
-## its conventional name. C source files are NOT touched here - the
-## C extractor traces compiler invocations rather than scanning by
-## extension, and ci/codeql-build.sh references the original tagged
-## paths directly.
+## without the '#tag' suffix so both extractors and gcc see the
+## source under its conventional name. Symlinks point at the
+## original tagged file via basename so the link resolves regardless
+## of how the tree is later moved.
 
 set -o errexit
 set -o nounset
@@ -31,9 +37,11 @@ cd -- "${repo_root}"
 linked=0
 skipped=0
 while IFS= read -r tagged; do
-  ## Only files whose extension portion contains the tag suffix.
+  ## Only files where the suffix immediately follows a known
+  ## source-language extension. Other tagged files (config files,
+  ## scripts without an extension, etc.) need no rename.
   case "${tagged}" in
-    *'.py#'*) ;;
+    *'.py#'*|*'.c#'*|*'.h#'*) ;;
     *) continue ;;
   esac
 
@@ -49,6 +57,6 @@ while IFS= read -r tagged; do
   target="$(basename -- "${tagged}")"
   ln -snf -- "${target}" "${clean}"
   linked=$((linked + 1))
-done < <(git ls-files -- '*.py#*')
+done < <(git ls-files -- '*.py#*' '*.c#*' '*.h#*')
 
 printf 'codeql-prepare: linked=%d skipped=%d\n' "${linked}" "${skipped}"

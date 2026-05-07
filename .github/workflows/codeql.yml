@@ -58,6 +58,11 @@ jobs:
     uses: org-ai-assisted/developer-meta-files/.github/workflows/codeql.yml@master
     with:
       language: c-cpp
+      ## prepare-command runs before init AND before the build
+      ## step; the build step (ci/codeql-build.sh) needs the clean
+      ## '*.c' symlinks the prep creates - gcc rejects '*.c#<tag>'
+      ## as not-a-C-file at link time.
+      prepare-command: bash ci/codeql-prepare.sh
       build-mode: manual
       build-command: bash ci/codeql-build.sh
     permissions:
