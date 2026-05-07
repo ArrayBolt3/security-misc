@@ -1,0 +1,63 @@
+## Copyright (C) 2026 - 2026 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
+## See the file COPYING for copying conditions.
+
+## CodeQL static analysis (consumer wrapper).
+##
+## Body of the job lives in the org-wide reusable workflow:
+##   org-ai-assisted/developer-meta-files/.github/workflows/codeql.yml
+##
+## Scope:
+##   * usr/lib/python3/dist-packages/fm_shim_frontend/  (Python)
+##   * usr/src/security-misc/{emerg-shutdown,fm-shim-backend}.c (C)
+##
+## Source files in this repo carry a '#<package-tag>' suffix per the
+## Kicksecure/genmkfile installable-routing convention. ci/codeql-
+## prepare.sh creates extension-clean symlinks for the Python sources
+## (the Python extractor discovers files by '.py'); the C build step
+## passes the tagged paths directly to gcc, which handles them fine.
+##
+## Bash is NOT scanned: CodeQL has no bash extractor. The repo's bash
+## scripts are covered by shellcheck (separate workflow).
+
+name: CodeQL
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  schedule:
+    ## Cron slot owned by this repo. Org allocation:
+    ##   helper-scripts: '17 4 * * 0'
+    ##   kloak:          '25 3 * * 5'
+    ##   security-misc:  '37 5 * * 0'
+    - cron: '37 5 * * 0'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    uses: org-ai-assisted/developer-meta-files/.github/workflows/codeql.yml@master
+    with:
+      language: python
+      prepare-command: bash ci/codeql-prepare.sh
+    permissions:
+      security-events: write
+      contents: read
+      packages: read
+
+  c-cpp:
+    uses: org-ai-assisted/developer-meta-files/.github/workflows/codeql.yml@master
+    with:
+      language: c-cpp
+      build-mode: manual
+      build-command: bash ci/codeql-build.sh
+    permissions:
+      security-events: write
+      contents: read
+      packages: read
