@@ -3,12 +3,15 @@
 ## Copyright (C) 2026 - 2026 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
 ## See the file COPYING for copying conditions.
 
+## AI-Assisted
+
 ## CodeQL manual build for the C sources in this repo.
 ##
-## The two C files use the genmkfile '#package-tag' filename convention
-## (see ci/codeql-prepare.sh). gcc accepts those paths verbatim, so we
-## hand them to the compiler unchanged - what matters for the C/C++
-## extractor is that gcc sees and parses each translation unit.
+## The two C files use the genmkfile '#package-tag' filename
+## convention (see ci/codeql-prepare.sh). gcc accepts those paths
+## verbatim, so we hand them to the compiler unchanged - what matters
+## for the C/C++ extractor is that gcc sees and parses each
+## translation unit.
 ##
 ## We compile to object files only ('-c'). No linking, no hardening
 ## flags - those live at runtime in the install-time build scripts
@@ -19,6 +22,7 @@
 set -o errexit
 set -o nounset
 set -o pipefail
+set -o errtrace
 set -o xtrace
 
 sudo --non-interactive apt-get update --error-on=any
@@ -29,6 +33,12 @@ build_dir="$(mktemp -d)"
 trap 'rm -rf -- "${build_dir}"' EXIT
 
 ## fm-shim-backend - dbus + systemd
+## NOTE: pkg-config subshells intentionally are not quoted; pkg-config
+## output is designed to be word-split by shells safely and would be
+## broken by quoting. Matches the pattern in
+## usr/libexec/security-misc/build-fm-shim-backend (see AGENTS.md
+## "pkg-config quoting in build script").
+# shellcheck disable=SC2046
 gcc -c \
   -o "${build_dir}/fm-shim-backend.o" \
   $(pkg-config --cflags dbus-1) \

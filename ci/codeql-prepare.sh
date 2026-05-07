@@ -3,11 +3,13 @@
 ## Copyright (C) 2026 - 2026 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
 ## See the file COPYING for copying conditions.
 
+## AI-Assisted
+
 ## CodeQL pre-init source-tree prep.
 ##
 ## This repo names installable files with a '#<package-tag>' suffix
-## (Kicksecure/genmkfile convention - the suffix routes the file to the
-## correct Debian binary package at build time). CodeQL's Python
+## (Kicksecure/genmkfile convention - the suffix routes the file to
+## the correct Debian binary package at build time). CodeQL's Python
 ## extractor discovers source files by the '.py' extension, so a file
 ## literally named 'foo.py#security-misc-shared' is invisible to it.
 ##
@@ -21,6 +23,7 @@
 set -o errexit
 set -o nounset
 set -o pipefail
+set -o errtrace
 
 repo_root="$(git rev-parse --show-toplevel)"
 cd -- "${repo_root}"
