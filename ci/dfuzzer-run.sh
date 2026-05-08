@@ -52,65 +52,77 @@ chmod 0755 -- "${work}/fm-shim-backend"
 ls -l -- "${work}/fm-shim-backend"
 printf '%s\n' "::endgroup::"
 
-## Register the service file under XDG_DATA_HOME so the transient
-## dbus-run-session below can auto-activate fm-shim-backend on
-## first method call. NB: 'Exec=' must be an absolute path; the
-## tmpdir path is generated above.
-service_dir="${HOME}/.local/share/dbus-1/services"
-mkdir -p -- "${service_dir}"
-cat > "${service_dir}/org.freedesktop.FileManager1.service" <<EOF
-[D-BUS Service]
-Name=org.freedesktop.FileManager1
-Exec=${work}/fm-shim-backend
-EOF
-printf 'Wrote service file: %s\n' "${service_dir}/org.freedesktop.FileManager1.service"
-cat -- "${service_dir}/org.freedesktop.FileManager1.service"
+## Inner script that runs INSIDE dbus-run-session's transient
+## session bus. Manually starts fm-shim-backend in the background
+## (auto-activation via XDG service files turned out to be
+## flaky inside dbus-run-session) and fuzzes it.
+##
+## Written to a temp file rather than passed inline via 'bash -c'
+## to avoid the multi-level shell quoting that was hiding bugs
+## during initial debugging.
+inner="${work}/dfuzzer-inner.sh"
+cat > "${inner}" <<'INNER'
+#!/bin/bash
+set -o nounset
+set -o pipefail
+set -o errtrace
+
+## Args (positional) from outer script:
+##   $1 = backend binary path
+##   $2 = dfuzzer seconds budget
+backend_bin="$1"
+seconds="$2"
+
+printf 'DBUS_SESSION_BUS_ADDRESS=%s\n' "${DBUS_SESSION_BUS_ADDRESS}"
+
+## Start fm-shim-backend in the background. It registers the
+## org.freedesktop.FileManager1 well-known name on the session
+## bus and enters its dispatch loop.
+"${backend_bin}" &
+backend_pid=$!
+trap 'kill "${backend_pid}" 2>/dev/null || true' EXIT
+
+## Give the backend a moment to register. If it dies during
+## startup (crash on dbus_bus_request_name, sd_notify failure,
+## etc.), surface it before dfuzzer can produce a confusing
+## 'name not found' error.
+sleep 1
+if ! kill -0 "${backend_pid}" 2>/dev/null; then
+  printf '::error::%s\n' "fm-shim-backend exited before dfuzzer could connect"
+  wait "${backend_pid}" 2>/dev/null
+  exit 1
+fi
+
+## Run the actual fuzzer. Iteration-bounded by default (-I 50
+## per method gives enough coverage on the small FileManager1
+## surface; bumpable per consumer). Total wall-clock bounded
+## by the outer timeout wrapper.
+rc=0
+timeout --preserve-status "${seconds}" \
+  dfuzzer \
+    -n org.freedesktop.FileManager1 \
+    -I 50 \
+    -v || rc=$?
+
+printf 'dfuzzer raw exit code: %s\n' "${rc}"
+exit "${rc}"
+INNER
+chmod +x "${inner}"
 
 printf '%s\n' "::group::dfuzzer (org.freedesktop.FileManager1, ${dfuzzer_seconds}s)"
-## dbus-run-session boots a transient session bus and runs the
-## inner shell with DBUS_SESSION_BUS_ADDRESS pointing at it.
-## dfuzzer reads that env var to talk to the session bus, then
-## activates the service via name resolution against our
-## XDG-local .service file.
-##
-## dfuzzer flag conventions (verified against v2.6 src/dfuzzer.c
-## getopt table):
-##   -n / --bus          bus name to fuzz (e.g. org.freedesktop.X)
-##                       NB: misnamed long flag - 'bus' here means
-##                       the service-bus-NAME, not the bus type.
-##   -v / --verbose      per-method progress output.
-## Note: dfuzzer has NO time-bounded flag. Iteration-bounded only
-## (-I / --iterations). To enforce a per-job time budget we wrap
-## with shell 'timeout' instead. Exit code 124 from timeout means
-## "we hit the time budget" - treated as success here because the
-## point was to fuzz for N seconds, not to assert dfuzzer
-## terminated naturally.
-##
-## DBUS_SESSION_BUS_ADDRESS export inside dbus-run-session: the
-## inner bash shell needs to see it; printf-debug it for log
-## traceability.
 rc=0
-dbus-run-session -- bash -c '
-  set -o nounset
-  set -o pipefail
-  printf "DBUS_SESSION_BUS_ADDRESS=%s\n" "${DBUS_SESSION_BUS_ADDRESS}"
-  timeout --preserve-status "'"${dfuzzer_seconds}"'" \
-    dfuzzer \
-      -n org.freedesktop.FileManager1 \
-      -v
-' || rc=$?
+dbus-run-session -- "${inner}" "${work}/fm-shim-backend" "${dfuzzer_seconds}" || rc=$?
 printf '%s\n' "::endgroup::"
 printf 'dfuzzer wrapper exit code: %s\n' "${rc}"
 
 case "${rc}" in
   0)
-    printf '%s\n' "dfuzzer: completed naturally; no crashes / exceptions detected."
+    printf '%s\n' "dfuzzer: completed cleanly; no crashes / exceptions detected."
     ;;
   124)
-    ## 'timeout --preserve-status' would propagate the underlying
-    ## program's exit code on a clean exit, but on timeout itself
-    ## it sends SIGTERM and surfaces 124. Treat as 'budget reached,
-    ## no crash detected within window'.
+    ## 'timeout --preserve-status' surfaces 124 when the wall-
+    ## clock budget is reached. Treat as 'budget reached, no
+    ## crash detected within window'.
     printf '%s\n' "dfuzzer: ${dfuzzer_seconds}s budget reached; no crash detected within window."
     rc=0
     ;;
