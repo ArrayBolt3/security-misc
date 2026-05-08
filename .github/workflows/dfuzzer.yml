@@ -66,13 +66,34 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install dfuzzer + build deps + dbus
+      - name: Install build deps + dbus
+        ## dfuzzer is NOT packaged in Ubuntu 24.04 noble (verified
+        ## via packages.ubuntu.com - 'No such package'); build it
+        ## from source in the next step. Apt deps here cover both
+        ## (a) building dfuzzer (meson/ninja/glib/xsltproc/docbook)
+        ## and (b) building fm-shim-backend via the upstream
+        ## compile script (libdbus-1-dev/libsystemd-dev/pkg-config).
         run: |
           sudo --non-interactive apt-get update --error-on=any
           sudo --non-interactive apt-get install --yes --no-install-recommends \
-            dfuzzer \
+            meson ninja-build \
+            xsltproc docbook-xsl \
+            libglib2.0-dev \
             dbus dbus-x11 \
-            libdbus-1-dev libsystemd-dev pkg-config
+            libdbus-1-dev libsystemd-dev pkg-config gcc
+
+      - name: Build dfuzzer from source
+        ## Pin the dfuzzer ref by tag so the workflow is
+        ## reproducible. v1.7 is the latest release as of
+        ## 2026-05-08; bump along with dependabot.yml when a new
+        ## release lands.
+        run: |
+          git clone --depth 1 --branch v1.7 \
+            https://github.com/dbus-fuzzer/dfuzzer /tmp/dfuzzer
+          meson setup --buildtype=release /tmp/dfuzzer/build /tmp/dfuzzer
+          ninja -C /tmp/dfuzzer/build -v
+          sudo install -m 0755 /tmp/dfuzzer/build/src/dfuzzer /usr/local/bin/dfuzzer
+          dfuzzer --version || dfuzzer -V || true
 
       - name: Prepare extension-clean source paths
         run: bash ci/codeql-prepare.sh
