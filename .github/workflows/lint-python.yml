@@ -7,23 +7,32 @@
 ## Simple Python lint for fm_shim_frontend.
 ##
 ## Scope is intentionally narrow:
-##   - usr/lib/python3/dist-packages/fm_shim_frontend/  (only
+##   - usr/lib/python3/dist-packages/fm_shim_frontend/  (the only
 ##     Python in this repo)
 ##
-## Two checks, both error-only (no style nitpicks):
-##   - pyflakes        : undefined names, unused imports, undefined
-##                       __all__, etc. Fast, low-noise.
-##   - pylint --errors : real issues (E*** rules) only. Skips C/W/R
-##                       style/refactor categories.
-##
-## PyQt5 is installed (apt 'python3-pyqt5') so pylint can resolve
-## the imports rather than emit an import-error for everything from
-## PyQt5.QtCore / .QtGui / .QtWidgets.
+## Tools:
+##   flake8 --select=F  Pyflakes-class checks only (F-codes:
+##                      undefined names, unused imports, unused
+##                      local variables, etc.). Skips PEP8 style
+##                      (E/W codes) - the codebase uses '##' block
+##                      comments which would trigger E266 noise.
+##                      flake8 over plain pyflakes because pyflakes
+##                      does not honor '# noqa' (the standard
+##                      escape-hatch for intentional violations);
+##                      flake8 wraps pyflakes and adds that
+##                      support. Pylint was deliberately not
+##                      enabled here because pylint's interaction
+##                      with PyQt5 produces a flood of
+##                      'no-name-in-module' false positives (PyQt5
+##                      generates its symbols dynamically; pylint
+##                      cannot see them statically without a
+##                      per-symbol --extension-pkg-allow-list that
+##                      defeats the simplicity of this workflow).
 ##
 ## Source files in this repo carry a '#<package-tag>' suffix per
-## the genmkfile convention. The Python tools discover sources by
-## file extension; ci/codeql-prepare.sh creates extension-clean
-## symlinks (re-used here for the same reason).
+## the genmkfile convention. pyflakes discovers sources by file
+## extension; ci/codeql-prepare.sh creates extension-clean symlinks
+## that re-use that fix.
 
 name: Lint Python
 
@@ -61,19 +70,21 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install linters and runtime imports
+      - name: Install flake8
         run: |
           sudo --non-interactive apt-get update --error-on=any
           sudo --non-interactive apt-get install --yes --no-install-recommends \
-            pylint pyflakes3 python3-pyqt5
+            flake8
 
       - name: Prepare extension-clean Python source paths
         run: bash ci/codeql-prepare.sh
 
-      - name: pyflakes
-        run: pyflakes3 -- usr/lib/python3/dist-packages/fm_shim_frontend/
-
-      - name: pylint (errors only)
+      - name: flake8 (pyflakes checks only)
+        ## Pass the symlinked clean-name files explicitly. Without
+        ## the explicit list, flake8 walks the directory and would
+        ## see each source twice (once via the symlink, once via
+        ## the original '*.py#tag') - causing duplicate findings.
         run: |
-          pylint --errors-only \
-            usr/lib/python3/dist-packages/fm_shim_frontend/
+          flake8 --select=F -- \
+            usr/lib/python3/dist-packages/fm_shim_frontend/__init__.py \
+            usr/lib/python3/dist-packages/fm_shim_frontend/fm_shim_frontend.py
