@@ -75,23 +75,47 @@ seconds="$2"
 
 printf 'DBUS_SESSION_BUS_ADDRESS=%s\n' "${DBUS_SESSION_BUS_ADDRESS}"
 
-## Start fm-shim-backend in the background. It registers the
-## org.freedesktop.FileManager1 well-known name on the session
-## bus and enters its dispatch loop.
-"${backend_bin}" &
+backend_log="$(dirname -- "${backend_bin}")/fm-shim-backend.log"
+
+## Start fm-shim-backend in the background. Capture its stdout +
+## stderr so we can surface them in the workflow log if dfuzzer
+## fails to connect (without a tty the backend's output is
+## block-buffered and would otherwise be lost on kill).
+"${backend_bin}" >"${backend_log}" 2>&1 &
 backend_pid=$!
 trap 'kill "${backend_pid}" 2>/dev/null || true' EXIT
 
-## Give the backend a moment to register. If it dies during
-## startup (crash on dbus_bus_request_name, sd_notify failure,
-## etc.), surface it before dfuzzer can produce a confusing
-## 'name not found' error.
-sleep 1
-if ! kill -0 "${backend_pid}" 2>/dev/null; then
-  printf '::error::%s\n' "fm-shim-backend exited before dfuzzer could connect"
-  wait "${backend_pid}" 2>/dev/null
-  exit 1
-fi
+## Wait up to 5s for the backend to register the well-known name
+## on the bus. dbus-run-session-internal name registration is
+## usually < 100ms but allow a generous budget for slow runners.
+for _i in 1 2 3 4 5; do
+  sleep 1
+  if ! kill -0 "${backend_pid}" 2>/dev/null; then
+    printf '::error::%s\n' "fm-shim-backend exited during startup"
+    cat -- "${backend_log}" || true
+    wait "${backend_pid}" 2>/dev/null
+    exit 1
+  fi
+  if dbus-send --session --print-reply --dest=org.freedesktop.DBus \
+       /org/freedesktop/DBus org.freedesktop.DBus.NameHasOwner \
+       string:org.freedesktop.FileManager1 2>/dev/null \
+       | grep -q 'boolean true'; then
+    printf 'fm-shim-backend registered (after %ss)\n' "${_i}"
+    break
+  fi
+done
+
+## Sanity-check: confirm the name is actually owned and dump the
+## backend's startup output to the workflow log. If anything
+## subsequent fails, this gives a maintainer enough to triage.
+printf '%s\n' "::group::backend startup log"
+cat -- "${backend_log}" 2>/dev/null || printf '(no log lines flushed yet)\n'
+printf '%s\n' "::endgroup::"
+
+printf '%s\n' "::group::busctl introspect (verifies Introspectable wiring)"
+busctl --user --no-pager introspect \
+  org.freedesktop.FileManager1 /org/freedesktop/FileManager1 || true
+printf '%s\n' "::endgroup::"
 
 ## Run the actual fuzzer. Iteration-bounded by default (-I 50
 ## per method gives enough coverage on the small FileManager1
@@ -103,6 +127,10 @@ timeout --preserve-status "${seconds}" \
     -n org.freedesktop.FileManager1 \
     -I 50 \
     -v || rc=$?
+
+printf '%s\n' "::group::backend log after fuzz"
+cat -- "${backend_log}" 2>/dev/null || true
+printf '%s\n' "::endgroup::"
 
 printf 'dfuzzer raw exit code: %s\n' "${rc}"
 exit "${rc}"
