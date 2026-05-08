@@ -28,7 +28,7 @@ permissions:
 
 jobs:
   coverity:
-    uses: org-ai-assisted/developer-meta-files/.github/workflows/coverity.yml@claude/test-github-token-access-HVDXY
+    uses: org-ai-assisted/developer-meta-files/.github/workflows/coverity.yml@master
     with:
       project-name: security-misc
       canonical-repos: "Kicksecure/security-misc,org-ai-assisted/security-misc"
