@@ -30,7 +30,9 @@ jobs:
   coverity:
     uses: org-ai-assisted/developer-meta-files/.github/workflows/coverity.yml@master
     with:
-      project-name: security-misc
+      ## scan.coverity.com project name. Verified at
+      ## https://scan.coverity.com/projects/Kicksecure-security-misc
+      project-name: Kicksecure-security-misc
       canonical-repos: "Kicksecure/security-misc,org-ai-assisted/security-misc"
     secrets: inherit
     permissions:
