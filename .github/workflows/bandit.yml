@@ -1,0 +1,33 @@
+---
+## Copyright (C) 2026 - 2026 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
+## See the file COPYING for copying conditions.
+
+## AI-Assisted
+
+## Consumer wrapper. Docs live in the reusable:
+## https://github.com/org-ai-assisted/developer-meta-files/blob/master/.github/workflows/bandit.yml
+
+name: bandit
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bandit:
+    uses: org-ai-assisted/developer-meta-files/.github/workflows/bandit.yml@master
+    with:
+      paths: usr/lib/python3/dist-packages/fm_shim_frontend
+      ## genmkfile names the Python sources '*.py#security-misc-shared'
+      ## (bandit discovers files by '.py' extension; would otherwise
+      ## miss them). The codeql-prepare.sh script symlinks them to
+      ## clean '*.py' names.
+      prepare-command: bash ci/codeql-prepare.sh
+    permissions:
+      contents: read
