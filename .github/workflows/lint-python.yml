@@ -1,0 +1,90 @@
+---
+## Copyright (C) 2026 - 2026 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
+## See the file COPYING for copying conditions.
+
+## AI-Assisted
+
+## Simple Python lint for fm_shim_frontend.
+##
+## Scope is intentionally narrow:
+##   - usr/lib/python3/dist-packages/fm_shim_frontend/  (the only
+##     Python in this repo)
+##
+## Tools:
+##   flake8 --select=F  Pyflakes-class checks only (F-codes:
+##                      undefined names, unused imports, unused
+##                      local variables, etc.). Skips PEP8 style
+##                      (E/W codes) - the codebase uses '##' block
+##                      comments which would trigger E266 noise.
+##                      flake8 over plain pyflakes because pyflakes
+##                      does not honor '# noqa' (the standard
+##                      escape-hatch for intentional violations);
+##                      flake8 wraps pyflakes and adds that
+##                      support. Pylint was deliberately not
+##                      enabled here because pylint's interaction
+##                      with PyQt5 produces a flood of
+##                      'no-name-in-module' false positives (PyQt5
+##                      generates its symbols dynamically; pylint
+##                      cannot see them statically without a
+##                      per-symbol --extension-pkg-allow-list that
+##                      defeats the simplicity of this workflow).
+##
+## Source files in this repo carry a '#<package-tag>' suffix per
+## the genmkfile convention. pyflakes discovers sources by file
+## extension; ci/codeql-prepare.sh creates extension-clean symlinks
+## that re-use that fix.
+
+name: Lint Python
+
+on:
+  push:
+    paths:
+      - 'usr/lib/python3/dist-packages/fm_shim_frontend/**'
+      - 'ci/codeql-prepare.sh'
+      - '.github/workflows/lint-python.yml'
+  pull_request:
+    paths:
+      - 'usr/lib/python3/dist-packages/fm_shim_frontend/**'
+      - 'ci/codeql-prepare.sh'
+      - '.github/workflows/lint-python.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint Python
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install flake8
+        run: |
+          sudo --non-interactive apt-get update --error-on=any
+          sudo --non-interactive apt-get install --yes --no-install-recommends \
+            flake8
+
+      - name: Prepare extension-clean Python source paths
+        run: bash ci/codeql-prepare.sh
+
+      - name: flake8 (pyflakes checks only)
+        ## Pass the symlinked clean-name files explicitly. Without
+        ## the explicit list, flake8 walks the directory and would
+        ## see each source twice (once via the symlink, once via
+        ## the original '*.py#tag') - causing duplicate findings.
+        run: |
+          flake8 --select=F -- \
+            usr/lib/python3/dist-packages/fm_shim_frontend/__init__.py \
+            usr/lib/python3/dist-packages/fm_shim_frontend/fm_shim_frontend.py

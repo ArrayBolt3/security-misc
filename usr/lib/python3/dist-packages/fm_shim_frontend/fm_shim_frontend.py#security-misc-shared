@@ -695,8 +695,14 @@ def main() -> NoReturn:
     timer.timeout.connect(lambda: None)
     timer.start(500)
 
-    # pylint: disable=unused-variable
-    fsw: FmShimWindow = FmShimWindow(path_list)
+    ## Intentionally retained reference - otherwise the QWindow
+    ## could be GC'd while app.exec_() is still running. The
+    ## variable is never read; per-tool pragmas suppress the
+    ## resulting "unused" warnings (pylint and pyflakes do not
+    ## share a common 'intentionally unused' marker for local
+    ## variables; pyflakes honors '# noqa', pylint honors
+    ## '# pylint: disable=...').
+    fsw: FmShimWindow = FmShimWindow(path_list)  # noqa: F841  # pylint: disable=unused-variable
     app.exec_()
     sys.exit(0)
 
