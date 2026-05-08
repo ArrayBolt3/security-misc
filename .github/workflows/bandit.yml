@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   bandit:
-    uses: org-ai-assisted/developer-meta-files/.github/workflows/bandit.yml@master
+    uses: org-ai-assisted/developer-meta-files/.github/workflows/reusable-bandit.yml@master
     with:
       paths: usr/lib/python3/dist-packages/fm_shim_frontend
       ## genmkfile names the Python sources '*.py#security-misc-shared'
