@@ -32,6 +32,8 @@ set -o errexit
 set -o nounset
 set -o pipefail
 set -o errtrace
+shopt -s inherit_errexit
+shopt -s shift_verbose
 
 ## CI guard.
 if [ "${CI:-}" != "true" ] && [ "${ALLOW_LOCAL:-}" != "true" ]; then
@@ -42,7 +44,13 @@ fi
 dfuzzer_seconds="${DFUZZER_SECONDS:-60}"
 
 work="$(mktemp -d)"
-trap 'rm -rf -- "${work}"' EXIT
+
+dfuzzer_run_cleanup() {
+  # shellcheck disable=SC2317  ## invoked via 'trap'
+  rm -r -f -- "${work}"
+}
+
+trap dfuzzer_run_cleanup EXIT
 
 printf '%s\n' "::group::Build fm-shim-backend"
 bash 'usr/libexec/security-misc/compile-fm-shim-backend#security-misc-shared' \
@@ -66,6 +74,8 @@ cat > "${inner}" <<'INNER'
 set -o nounset
 set -o pipefail
 set -o errtrace
+shopt -s inherit_errexit
+shopt -s shift_verbose
 
 ## Args (positional) from outer script:
 ##   $1 = backend binary path
@@ -73,7 +83,7 @@ set -o errtrace
 backend_bin="$1"
 seconds="$2"
 
-printf 'DBUS_SESSION_BUS_ADDRESS=%s\n' "${DBUS_SESSION_BUS_ADDRESS}"
+printf '%s\n' "DBUS_SESSION_BUS_ADDRESS=${DBUS_SESSION_BUS_ADDRESS}"
 
 backend_log="$(dirname -- "${backend_bin}")/fm-shim-backend.log"
 
@@ -83,7 +93,12 @@ backend_log="$(dirname -- "${backend_bin}")/fm-shim-backend.log"
 ## block-buffered and would otherwise be lost on kill).
 "${backend_bin}" >"${backend_log}" 2>&1 &
 backend_pid=$!
-trap 'kill "${backend_pid}" 2>/dev/null || true' EXIT
+
+dfuzzer_inner_cleanup() {
+  kill "${backend_pid}" 2>/dev/null || true
+}
+
+trap dfuzzer_inner_cleanup EXIT
 
 ## Wait up to 5s for the backend to register the well-known name
 ## on the bus. dbus-run-session-internal name registration is
@@ -91,7 +106,7 @@ trap 'kill "${backend_pid}" 2>/dev/null || true' EXIT
 for _i in 1 2 3 4 5; do
   sleep 1
   if ! kill -0 "${backend_pid}" 2>/dev/null; then
-    printf '::error::%s\n' "fm-shim-backend exited during startup"
+    printf '%s\n' "::error::fm-shim-backend exited during startup"
     cat -- "${backend_log}" || true
     wait "${backend_pid}" 2>/dev/null
     exit 1
@@ -100,7 +115,7 @@ for _i in 1 2 3 4 5; do
        /org/freedesktop/DBus org.freedesktop.DBus.NameHasOwner \
        string:org.freedesktop.FileManager1 2>/dev/null \
        | grep -q 'boolean true'; then
-    printf 'fm-shim-backend registered (after %ss)\n' "${_i}"
+    printf '%s\n' "fm-shim-backend registered (after ${_i}s)"
     break
   fi
 done
@@ -109,7 +124,7 @@ done
 ## backend's startup output to the workflow log. If anything
 ## subsequent fails, this gives a maintainer enough to triage.
 printf '%s\n' "::group::backend startup log"
-cat -- "${backend_log}" 2>/dev/null || printf '(no log lines flushed yet)\n'
+cat -- "${backend_log}" 2>/dev/null || printf '%s\n' "(no log lines flushed yet)"
 printf '%s\n' "::endgroup::"
 
 printf '%s\n' "::group::busctl introspect (verifies Introspectable wiring)"
@@ -148,7 +163,7 @@ printf '%s\n' "::group::backend log after fuzz"
 cat -- "${backend_log}" 2>/dev/null || true
 printf '%s\n' "::endgroup::"
 
-printf 'dfuzzer raw exit code: %s\n' "${rc}"
+printf '%s\n' "dfuzzer raw exit code: ${rc}"
 exit "${rc}"
 INNER
 chmod +x "${inner}"
@@ -157,7 +172,7 @@ printf '%s\n' "::group::dfuzzer (org.freedesktop.FileManager1, ${dfuzzer_seconds
 rc=0
 dbus-run-session -- "${inner}" "${work}/fm-shim-backend" "${dfuzzer_seconds}" || rc=$?
 printf '%s\n' "::endgroup::"
-printf 'dfuzzer wrapper exit code: %s\n' "${rc}"
+printf '%s\n' "dfuzzer wrapper exit code: ${rc}"
 
 case "${rc}" in
   0)
@@ -171,7 +186,7 @@ case "${rc}" in
     rc=0
     ;;
   *)
-    printf '::error::%s\n' "dfuzzer reported a finding (exit ${rc}). See log above for the failing method."
+    printf '%s\n' "::error::dfuzzer reported a finding (exit ${rc}). See log above for the failing method."
     ;;
 esac
 
