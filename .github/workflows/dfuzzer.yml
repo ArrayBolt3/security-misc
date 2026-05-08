@@ -83,12 +83,10 @@ jobs:
             libdbus-1-dev libsystemd-dev pkg-config gcc
 
       - name: Build dfuzzer from source
-        ## Pin the dfuzzer ref by tag so the workflow is
-        ## reproducible. v1.7 is the latest release as of
-        ## 2026-05-08; bump along with dependabot.yml when a new
-        ## release lands.
+        ## Pinned to upstream tag v2.6 (latest release as of
+        ## 2026-05-08). Bump when a new release lands.
         run: |
-          git clone --depth 1 --branch v1.7 \
+          git clone --depth 1 --branch v2.6 \
             https://github.com/dbus-fuzzer/dfuzzer /tmp/dfuzzer
           meson setup --buildtype=release /tmp/dfuzzer/build /tmp/dfuzzer
           ninja -C /tmp/dfuzzer/build -v
