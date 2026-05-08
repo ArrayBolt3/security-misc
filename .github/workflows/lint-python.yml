@@ -1,0 +1,79 @@
+---
+## Copyright (C) 2026 - 2026 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
+## See the file COPYING for copying conditions.
+
+## AI-Assisted
+
+## Simple Python lint for fm_shim_frontend.
+##
+## Scope is intentionally narrow:
+##   - usr/lib/python3/dist-packages/fm_shim_frontend/  (only
+##     Python in this repo)
+##
+## Two checks, both error-only (no style nitpicks):
+##   - pyflakes        : undefined names, unused imports, undefined
+##                       __all__, etc. Fast, low-noise.
+##   - pylint --errors : real issues (E*** rules) only. Skips C/W/R
+##                       style/refactor categories.
+##
+## PyQt5 is installed (apt 'python3-pyqt5') so pylint can resolve
+## the imports rather than emit an import-error for everything from
+## PyQt5.QtCore / .QtGui / .QtWidgets.
+##
+## Source files in this repo carry a '#<package-tag>' suffix per
+## the genmkfile convention. The Python tools discover sources by
+## file extension; ci/codeql-prepare.sh creates extension-clean
+## symlinks (re-used here for the same reason).
+
+name: Lint Python
+
+on:
+  push:
+    paths:
+      - 'usr/lib/python3/dist-packages/fm_shim_frontend/**'
+      - 'ci/codeql-prepare.sh'
+      - '.github/workflows/lint-python.yml'
+  pull_request:
+    paths:
+      - 'usr/lib/python3/dist-packages/fm_shim_frontend/**'
+      - 'ci/codeql-prepare.sh'
+      - '.github/workflows/lint-python.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint Python
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install linters and runtime imports
+        run: |
+          sudo --non-interactive apt-get update --error-on=any
+          sudo --non-interactive apt-get install --yes --no-install-recommends \
+            pylint pyflakes3 python3-pyqt5
+
+      - name: Prepare extension-clean Python source paths
+        run: bash ci/codeql-prepare.sh
+
+      - name: pyflakes
+        run: pyflakes3 -- usr/lib/python3/dist-packages/fm_shim_frontend/
+
+      - name: pylint (errors only)
+        run: |
+          pylint --errors-only \
+            usr/lib/python3/dist-packages/fm_shim_frontend/
