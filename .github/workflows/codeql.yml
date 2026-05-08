@@ -33,7 +33,6 @@ jobs:
     permissions:
       security-events: write
       contents: read
-      packages: read
 
   c-cpp:
     uses: org-ai-assisted/developer-meta-files/.github/workflows/reusable-codeql.yml@master
@@ -45,4 +44,3 @@ jobs:
     permissions:
       security-events: write
       contents: read
-      packages: read
