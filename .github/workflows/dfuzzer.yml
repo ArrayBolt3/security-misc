@@ -90,7 +90,7 @@ jobs:
             https://github.com/dbus-fuzzer/dfuzzer /tmp/dfuzzer
           meson setup --buildtype=release /tmp/dfuzzer/build /tmp/dfuzzer
           ninja -C /tmp/dfuzzer/build -v
-          sudo install -m 0755 /tmp/dfuzzer/build/src/dfuzzer /usr/local/bin/dfuzzer
+          sudo install -m 0755 /tmp/dfuzzer/build/dfuzzer /usr/local/bin/dfuzzer
           dfuzzer --version || dfuzzer -V || true
 
       - name: Prepare extension-clean source paths
