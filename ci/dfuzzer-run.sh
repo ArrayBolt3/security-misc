@@ -122,9 +122,18 @@ printf '%s\n' "::endgroup::"
 ## surface; bumpable per consumer). Total wall-clock bounded
 ## by the outer timeout wrapper.
 rc=0
+## -n  bus name (required)
+## -o  object path - dfuzzer defaults to '/' if omitted, which is
+##     empty for fm-shim-backend (its methods are at
+##     /org/freedesktop/FileManager1). Without -o the previous
+##     runs exited in milliseconds because there was nothing to
+##     fuzz at the default path.
+## -I  iterations per method.
+## -v  verbose per-method progress.
 timeout --preserve-status "${seconds}" \
   dfuzzer \
     -n org.freedesktop.FileManager1 \
+    -o /org/freedesktop/FileManager1 \
     -I 50 \
     -v || rc=$?
 
