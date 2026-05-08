@@ -69,23 +69,54 @@ cat -- "${service_dir}/org.freedesktop.FileManager1.service"
 printf '%s\n' "::group::dfuzzer (org.freedesktop.FileManager1, ${dfuzzer_seconds}s)"
 ## dbus-run-session boots a transient session bus and runs the
 ## inner shell with DBUS_SESSION_BUS_ADDRESS pointing at it.
-## dfuzzer activates the service via name resolution.
+## dfuzzer reads that env var to talk to the session bus, then
+## activates the service via name resolution against our
+## XDG-local .service file.
 ##
-## --max-time bounds the per-method fuzz duration so the workflow
-## doesn't run unbounded. -v emits per-method progress so a CI
-## maintainer reading the log can see which interface / method
-## was being exercised when a crash occurred.
+## dfuzzer flag conventions (verified against v2.6 src/dfuzzer.c
+## getopt table):
+##   -n / --bus          bus name to fuzz (e.g. org.freedesktop.X)
+##                       NB: misnamed long flag - 'bus' here means
+##                       the service-bus-NAME, not the bus type.
+##   -v / --verbose      per-method progress output.
+## Note: dfuzzer has NO time-bounded flag. Iteration-bounded only
+## (-I / --iterations). To enforce a per-job time budget we wrap
+## with shell 'timeout' instead. Exit code 124 from timeout means
+## "we hit the time budget" - treated as success here because the
+## point was to fuzz for N seconds, not to assert dfuzzer
+## terminated naturally.
+##
+## DBUS_SESSION_BUS_ADDRESS export inside dbus-run-session: the
+## inner bash shell needs to see it; printf-debug it for log
+## traceability.
+rc=0
 dbus-run-session -- bash -c '
-  set -o errexit
   set -o nounset
   set -o pipefail
   printf "DBUS_SESSION_BUS_ADDRESS=%s\n" "${DBUS_SESSION_BUS_ADDRESS}"
-  dfuzzer \
-    --bus session \
-    --name org.freedesktop.FileManager1 \
-    --max-time "'"${dfuzzer_seconds}"'" \
-    --verbose
-'
+  timeout --preserve-status "'"${dfuzzer_seconds}"'" \
+    dfuzzer \
+      -n org.freedesktop.FileManager1 \
+      -v
+' || rc=$?
 printf '%s\n' "::endgroup::"
+printf 'dfuzzer wrapper exit code: %s\n' "${rc}"
 
-printf '%s\n' "dfuzzer: no crashes / exceptions detected on the fuzzed surface."
+case "${rc}" in
+  0)
+    printf '%s\n' "dfuzzer: completed naturally; no crashes / exceptions detected."
+    ;;
+  124)
+    ## 'timeout --preserve-status' would propagate the underlying
+    ## program's exit code on a clean exit, but on timeout itself
+    ## it sends SIGTERM and surfaces 124. Treat as 'budget reached,
+    ## no crash detected within window'.
+    printf '%s\n' "dfuzzer: ${dfuzzer_seconds}s budget reached; no crash detected within window."
+    rc=0
+    ;;
+  *)
+    printf '::error::%s\n' "dfuzzer reported a finding (exit ${rc}). See log above for the failing method."
+    ;;
+esac
+
+exit "${rc}"
