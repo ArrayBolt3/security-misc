@@ -1,0 +1,37 @@
+---
+## Copyright (C) 2026 - 2026 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
+## See the file COPYING for copying conditions.
+
+## AI-Assisted
+
+## Consumer wrapper. Docs live in the reusable:
+## https://github.com/org-ai-assisted/developer-meta-files/blob/master/.github/workflows/coverity.yml
+##
+## Python-only Coverity scan for now (fm_shim_frontend.py). The C
+## sources under usr/src/security-misc/ are covered separately by
+## CodeQL via the c-cpp job in codeql.yml; adding them to this
+## Coverity scan would require a multi-language cov-build invocation
+## driven by the install-time compile helpers, which is more
+## bookkeeping than the current C surface area justifies. Revisit if
+## the C surface grows.
+
+name: Coverity
+
+on:
+  schedule:
+    ## Sunday 06:30 UTC. Offset from helper-scripts ('0 6 * * 0').
+    - cron: '30 6 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  coverity:
+    uses: org-ai-assisted/developer-meta-files/.github/workflows/coverity.yml@master
+    with:
+      project-name: security-misc
+      canonical-repos: "Kicksecure/security-misc,org-ai-assisted/security-misc"
+    secrets: inherit
+    permissions:
+      contents: read
