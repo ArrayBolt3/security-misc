@@ -128,12 +128,19 @@ rc=0
 ##     /org/freedesktop/FileManager1). Without -o the previous
 ##     runs exited in milliseconds because there was nothing to
 ##     fuzz at the default path.
+## -s  --no-suppressions. Without this flag dfuzzer 2.6 treats
+##     "no suppression file found at ./dfuzzer.conf,
+##     ~/.dfuzzer.conf, or /etc/dfuzzer.conf" as a fatal error
+##     and exits 1 before fuzzing anything. None of those paths
+##     exist on a fresh GitHub runner. We don't need suppressions
+##     anyway - we want every error reported.
 ## -I  iterations per method.
 ## -v  verbose per-method progress.
 timeout --preserve-status "${seconds}" \
   dfuzzer \
     -n org.freedesktop.FileManager1 \
     -o /org/freedesktop/FileManager1 \
+    -s \
     -I 50 \
     -v || rc=$?
 
