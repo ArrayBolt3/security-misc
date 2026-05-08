@@ -70,11 +70,16 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install flake8
+      - name: Install flake8 + Hypothesis test deps
+        ## python3-pyqt5 + python3-pyqt5.sip are runtime deps of
+        ## fm_shim_frontend; pytest + hypothesis are needed for the
+        ## property-test suite added in 2026-05.
         run: |
           sudo --non-interactive apt-get update --error-on=any
           sudo --non-interactive apt-get install --yes --no-install-recommends \
-            flake8
+            flake8 \
+            python3-pytest python3-hypothesis \
+            python3-pyqt5 python3-pyqt5.sip
 
       - name: Prepare extension-clean Python source paths
         run: bash ci/codeql-prepare.sh
@@ -88,3 +93,14 @@ jobs:
           flake8 --select=F -- \
             usr/lib/python3/dist-packages/fm_shim_frontend/__init__.py \
             usr/lib/python3/dist-packages/fm_shim_frontend/fm_shim_frontend.py
+
+      - name: Hypothesis property tests
+        ## Coverage-based property fuzzing of the URI-validation
+        ## chokepoint (get_path_list_from_uris). Already caught one
+        ## real ENAMETOOLONG-on-long-path crash bug at introduction
+        ## (see ci/tests/fm_shim_frontend/test_property.py header).
+        env:
+          PYTHONPATH: usr/lib/python3/dist-packages
+        run: |
+          python3 -m pytest --import-mode=importlib -q \
+            ci/tests/fm_shim_frontend/test_property.py
