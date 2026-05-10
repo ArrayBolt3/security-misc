@@ -29,7 +29,7 @@ jobs:
     uses: org-ai-assisted/developer-meta-files/.github/workflows/reusable-codeql.yml@master
     with:
       language: python
-      prepare-command: bash ci/codeql-prepare.sh
+      prepare-command: ci/codeql-prepare.sh
     permissions:
       security-events: write
       contents: read
@@ -38,9 +38,9 @@ jobs:
     uses: org-ai-assisted/developer-meta-files/.github/workflows/reusable-codeql.yml@master
     with:
       language: c-cpp
-      prepare-command: bash ci/codeql-prepare.sh
+      prepare-command: ci/codeql-prepare.sh
       build-mode: manual
-      build-command: bash ci/codeql-build.sh
+      build-command: ci/codeql-build.sh
     permissions:
       security-events: write
       contents: read

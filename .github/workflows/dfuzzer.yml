@@ -84,10 +84,10 @@ jobs:
         ## (R-100 - no inline scripts in YAML). dfuzzer is NOT
         ## packaged in Ubuntu 24.04 noble, hence the from-source
         ## build pinned to upstream v2.6.
-        run: bash ci/dfuzzer-build.sh
+        run: ci/dfuzzer-build.sh
 
       - name: Prepare extension-clean source paths
-        run: bash ci/codeql-prepare.sh
+        run: ci/codeql-prepare.sh
 
       - name: Run dfuzzer
-        run: bash ci/dfuzzer-run.sh
+        run: ci/dfuzzer-run.sh

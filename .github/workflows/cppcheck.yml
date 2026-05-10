@@ -28,6 +28,6 @@ jobs:
       ## (cppcheck discovers files by extension; would otherwise miss
       ## them). The codeql-prepare.sh script symlinks them to clean
       ## '*.c' names.
-      prepare-command: bash ci/codeql-prepare.sh
+      prepare-command: ci/codeql-prepare.sh
     permissions:
       contents: read

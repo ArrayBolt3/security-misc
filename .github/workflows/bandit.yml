@@ -28,6 +28,6 @@ jobs:
       ## (bandit discovers files by '.py' extension; would otherwise
       ## miss them). The codeql-prepare.sh script symlinks them to
       ## clean '*.py' names.
-      prepare-command: bash ci/codeql-prepare.sh
+      prepare-command: ci/codeql-prepare.sh
     permissions:
       contents: read
