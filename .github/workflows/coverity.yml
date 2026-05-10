@@ -30,10 +30,13 @@ jobs:
   coverity:
     uses: org-ai-assisted/developer-meta-files/.github/workflows/reusable-coverity.yml@master
     with:
-      ## scan.coverity.com project name. Verified at
-      ## https://scan.coverity.com/projects/Kicksecure-security-misc
-      project-name: Kicksecure-security-misc
+      ## scan.coverity.com project name. The URL renders the slash
+      ## as a dash for display ('/projects/Kicksecure-security-misc')
+      ## but the API form-parameter requires the actual slash.
+      project-name: Kicksecure/security-misc
       canonical-repos: "Kicksecure/security-misc,org-ai-assisted/security-misc"
-    secrets: inherit
+    secrets:
+      COVERITY_SCAN_TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
+      COVERITY_SCAN_EMAIL: ${{ secrets.COVERITY_SCAN_EMAIL }}
     permissions:
       contents: read
