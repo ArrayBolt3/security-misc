@@ -66,32 +66,25 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install build deps + dbus
-        ## dfuzzer is NOT packaged in Ubuntu 24.04 noble (verified
-        ## via packages.ubuntu.com - 'No such package'); build it
-        ## from source in the next step. Apt deps here cover both
-        ## (a) building dfuzzer (meson/ninja/glib/xsltproc/docbook)
-        ## and (b) building fm-shim-backend via the upstream
-        ## compile script (libdbus-1-dev/libsystemd-dev/pkg-config).
+      - name: Prepare apt cache directory
         run: |
-          sudo --non-interactive apt-get update --error-on=any
-          sudo --non-interactive apt-get install --yes --no-install-recommends \
-            meson ninja-build \
-            xsltproc docbook-xsl \
-            libglib2.0-dev \
-            dbus dbus-x11 \
-            libdbus-1-dev libsystemd-dev pkg-config gcc
+          sudo mkdir -p /var/cache/apt/archives
+          sudo chown -R "$(id -u):$(id -g)" /var/cache/apt/archives
 
-      - name: Build dfuzzer from source
-        ## Pinned to upstream tag v2.6 (latest release as of
-        ## 2026-05-08). Bump when a new release lands.
-        run: |
-          git clone --depth 1 --branch v2.6 \
-            https://github.com/dbus-fuzzer/dfuzzer /tmp/dfuzzer
-          meson setup --buildtype=release /tmp/dfuzzer/build /tmp/dfuzzer
-          ninja -C /tmp/dfuzzer/build -v
-          sudo install -m 0755 /tmp/dfuzzer/build/dfuzzer /usr/local/bin/dfuzzer
-          dfuzzer --version || dfuzzer -V || true
+      - name: Cache apt packages
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-dfuzzer-${{ hashFiles('.github/workflows/dfuzzer.yml', 'ci/dfuzzer-build.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-dfuzzer-
+
+      - name: Install build deps + build dfuzzer from source
+        ## Apt install + dfuzzer compile lives in ci/dfuzzer-build.sh
+        ## (R-100 - no inline scripts in YAML). dfuzzer is NOT
+        ## packaged in Ubuntu 24.04 noble, hence the from-source
+        ## build pinned to upstream v2.6.
+        run: bash ci/dfuzzer-build.sh
 
       - name: Prepare extension-clean source paths
         run: bash ci/codeql-prepare.sh
