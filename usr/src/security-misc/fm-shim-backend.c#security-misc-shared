@@ -234,6 +234,70 @@ dbus_cleanup:
 }
 
 /*
+ * Introspection XML for the org.freedesktop.FileManager1 interface
+ * we implement, plus the standard org.freedesktop.DBus.Introspectable
+ * interface itself. Returned by handle_introspect() in response to
+ * org.freedesktop.DBus.Introspectable.Introspect calls.
+ *
+ * Implementing Introspect is conventional for any D-Bus service:
+ * the spec at https://dbus.freedesktop.org/doc/dbus-specification.html
+ * #standard-interfaces-introspectable encourages it, dbus-send /
+ * busctl / d-feet / dfuzzer all rely on it for service discovery,
+ * and the cost is one static string + one branch in dispatch.
+ *
+ * The argument signatures here ('as' for the URI list, 's' for the
+ * startup ID) match the freedesktop.org FileManager1 spec at
+ * https://www.freedesktop.org/wiki/Specifications/file-manager-interface/.
+ */
+static const char introspection_xml[] =
+  "<!DOCTYPE node PUBLIC \"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN\"\n"
+  " \"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">\n"
+  "<node>\n"
+  "  <interface name=\"org.freedesktop.DBus.Introspectable\">\n"
+  "    <method name=\"Introspect\">\n"
+  "      <arg name=\"data\" direction=\"out\" type=\"s\"/>\n"
+  "    </method>\n"
+  "  </interface>\n"
+  "  <interface name=\"org.freedesktop.FileManager1\">\n"
+  "    <method name=\"ShowFolders\">\n"
+  "      <arg name=\"URIs\" direction=\"in\" type=\"as\"/>\n"
+  "      <arg name=\"StartupId\" direction=\"in\" type=\"s\"/>\n"
+  "    </method>\n"
+  "    <method name=\"ShowItems\">\n"
+  "      <arg name=\"URIs\" direction=\"in\" type=\"as\"/>\n"
+  "      <arg name=\"StartupId\" direction=\"in\" type=\"s\"/>\n"
+  "    </method>\n"
+  "    <method name=\"ShowItemProperties\">\n"
+  "      <arg name=\"URIs\" direction=\"in\" type=\"as\"/>\n"
+  "      <arg name=\"StartupId\" direction=\"in\" type=\"s\"/>\n"
+  "    </method>\n"
+  "  </interface>\n"
+  "</node>\n";
+
+static void handle_introspect(DBusMessage *dbus_msg) {
+  DBusMessage *reply = NULL;
+  const char *xml_ptr = introspection_xml;
+
+  reply = dbus_message_new_method_return(dbus_msg);
+  if (reply == NULL) {
+    warnx("handle_introspect: dbus_message_new_method_return failed");
+    return;
+  }
+  if (dbus_message_append_args(reply,
+        DBUS_TYPE_STRING, &xml_ptr,
+        DBUS_TYPE_INVALID) == FALSE) {
+    warnx("handle_introspect: dbus_message_append_args failed");
+    dbus_message_unref(reply);
+    return;
+  }
+  if (dbus_connection_send(dbus_conn, reply, NULL) == FALSE) {
+    warnx("handle_introspect: dbus_connection_send failed");
+  }
+  dbus_connection_flush(dbus_conn);
+  dbus_message_unref(reply);
+}
+
+/*
  * All three of the method calls we handle take the same arguments, and we do
  * the hard work in the frontend, so we can use the same function here to
  * handle all the calls.
@@ -428,6 +492,27 @@ int main(void) {
       warnx("Received a D-Bus method call with a NULL interface!");
       goto cleanup;
     }
+
+    dbus_msg_method = dbus_message_get_member(dbus_msg);
+    if (dbus_msg_method == NULL) {
+      warnx("Received a D-Bus method call with a NULL method!");
+      goto cleanup;
+    }
+
+    /*
+     * Standard D-Bus introspection. Handled BEFORE the
+     * FileManager1 interface filter below because Introspect is
+     * on the org.freedesktop.DBus.Introspectable interface, not
+     * FileManager1. Without this branch, dbus-send / busctl /
+     * d-feet / dfuzzer all see 'Unknown interface' and cannot
+     * discover the methods we expose.
+     */
+    if (strcmp(dbus_msg_iface, "org.freedesktop.DBus.Introspectable") == 0
+        && strcmp(dbus_msg_method, "Introspect") == 0) {
+      handle_introspect(dbus_msg);
+      goto cleanup;
+    }
+
     if (strcmp(dbus_msg_iface, "org.freedesktop.FileManager1") != 0) {
       warnx("Received a D-Bus method call for interface '%s', rather than 'org.freedesktop.FileManager1'!",
         dbus_msg_iface);
@@ -436,11 +521,6 @@ int main(void) {
       goto cleanup;
     }
 
-    dbus_msg_method = dbus_message_get_member(dbus_msg);
-    if (dbus_msg_method == NULL) {
-      warnx("Received a D-Bus method call with a NULL method!");
-      goto cleanup;
-    }
     if (strcmp(dbus_msg_method, "ShowFolders") == 0) {
       handle_dbus_method_call(dbus_msg, "ShowFolders", "--show-folders");
     } else if (strcmp(dbus_msg_method, "ShowItems") == 0) {

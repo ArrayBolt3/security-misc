@@ -597,7 +597,26 @@ def get_path_list_from_uris(
 
         ## Ensure the path is valid, exists, and is accessible.
         path_item: Path = Path(path_str)
-        if not path_item.exists(follow_symlinks=False):
+        try:
+            path_exists = path_item.exists(follow_symlinks=False)
+        except OSError as exc:
+            ## Path.exists() can raise on pathological inputs - in
+            ## particular ENAMETOOLONG (errno 36) when any single
+            ## path component exceeds NAME_MAX. An attacker who can
+            ## inject a URI here (D-Bus FileManager1 calls from
+            ## another desktop app) could otherwise crash this
+            ## process by sending one long path. Treat as
+            ## "non-existent, skip" - same as the False branch.
+            ## Caught by ci/tests/fm_shim_frontend/test_property.py
+            ## hypothesis fuzz suite (long-path adversarial input).
+            print(
+                f"WARNING: Path could not be checked (errno "
+                f"{exc.errno}: {exc.strerror}), skipping. Sanitized "
+                f"path: '{stdisplay(path_str, sgr=-1)}'",
+                file=sys.stderr,
+            )
+            continue
+        if not path_exists:
             print(
                 f"WARNING: Path '{stdisplay(path_str, sgr=-1)}' does not "
                 + "exist, skipping.",
@@ -695,8 +714,14 @@ def main() -> NoReturn:
     timer.timeout.connect(lambda: None)
     timer.start(500)
 
-    # pylint: disable=unused-variable
-    fsw: FmShimWindow = FmShimWindow(path_list)
+    ## Intentionally retained reference - otherwise the QWindow
+    ## could be GC'd while app.exec_() is still running. The
+    ## variable is never read; per-tool pragmas suppress the
+    ## resulting "unused" warnings (pylint and pyflakes do not
+    ## share a common 'intentionally unused' marker for local
+    ## variables; pyflakes honors '# noqa', pylint honors
+    ## '# pylint: disable=...').
+    fsw: FmShimWindow = FmShimWindow(path_list)  # noqa: F841  # pylint: disable=unused-variable
     app.exec_()
     sys.exit(0)
 

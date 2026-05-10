@@ -10,6 +10,8 @@
 ## Component Notes
 
 - [fm-shim](./agents/fm-shim.md) - FileManager1 D-Bus shim (backend + frontend)
+- [fuzzing](./agents/fuzzing.md) - Hypothesis property tests under
+  `ci/tests/<pkg>/`; ClusterFuzzLite / libFuzzer not yet wired up.
 
 ## pkg-config quoting in build script
 

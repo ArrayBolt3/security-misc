@@ -1,0 +1,100 @@
+---
+## Copyright (C) 2026 - 2026 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
+## See the file COPYING for copying conditions.
+
+## AI-Assisted
+
+## Coverage-guided D-Bus surface fuzzing for fm-shim-backend.
+##
+## fm-shim-backend implements org.freedesktop.FileManager1 on the
+## session bus. dfuzzer (Debian-archive-shipped) walks every method
+## / signal the service exposes and sends type-correct adversarial
+## payloads. Catches the integration surface (D-Bus marshaling
+## glue, sd_notify path, signal handlers, leaks across method
+## calls) that an in-process libFuzzer harness on the parser alone
+## would not catch.
+##
+## Trigger shape mirrors helper-scripts' fuzz.yml: workflow_dispatch
+## only initially. Once a green-baseline run lands, add path-filtered
+## pull_request and push triggers (commented out below).
+##
+## Workflow body lives in ci/dfuzzer-run.sh (R-100); this file
+## carries only the trigger schedule + apt install + invocation.
+
+name: dfuzzer (D-Bus)
+
+on:
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: 'Per-method dfuzzer time budget (seconds)'
+        required: false
+        default: '60'
+  ## pull_request:
+  ##   branches: [master]
+  ##   paths:
+  ##     - 'usr/src/security-misc/fm-shim-backend.c#security-misc-shared'
+  ##     - 'usr/libexec/security-misc/compile-fm-shim-backend#security-misc-shared'
+  ##     - 'ci/dfuzzer-run.sh'
+  ##     - 'ci/codeql-prepare.sh'
+  ##     - '.github/workflows/dfuzzer.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dfuzzer:
+    name: dfuzzer (org.freedesktop.FileManager1)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name != 'pull_request'
+
+    permissions:
+      contents: read
+
+    env:
+      DFUZZER_SECONDS: ${{ inputs.seconds || '60' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install build deps + dbus
+        ## dfuzzer is NOT packaged in Ubuntu 24.04 noble (verified
+        ## via packages.ubuntu.com - 'No such package'); build it
+        ## from source in the next step. Apt deps here cover both
+        ## (a) building dfuzzer (meson/ninja/glib/xsltproc/docbook)
+        ## and (b) building fm-shim-backend via the upstream
+        ## compile script (libdbus-1-dev/libsystemd-dev/pkg-config).
+        run: |
+          sudo --non-interactive apt-get update --error-on=any
+          sudo --non-interactive apt-get install --yes --no-install-recommends \
+            meson ninja-build \
+            xsltproc docbook-xsl \
+            libglib2.0-dev \
+            dbus dbus-x11 \
+            libdbus-1-dev libsystemd-dev pkg-config gcc
+
+      - name: Build dfuzzer from source
+        ## Pinned to upstream tag v2.6 (latest release as of
+        ## 2026-05-08). Bump when a new release lands.
+        run: |
+          git clone --depth 1 --branch v2.6 \
+            https://github.com/dbus-fuzzer/dfuzzer /tmp/dfuzzer
+          meson setup --buildtype=release /tmp/dfuzzer/build /tmp/dfuzzer
+          ninja -C /tmp/dfuzzer/build -v
+          sudo install -m 0755 /tmp/dfuzzer/build/dfuzzer /usr/local/bin/dfuzzer
+          dfuzzer --version || dfuzzer -V || true
+
+      - name: Prepare extension-clean source paths
+        run: bash ci/codeql-prepare.sh
+
+      - name: Run dfuzzer
+        run: bash ci/dfuzzer-run.sh
