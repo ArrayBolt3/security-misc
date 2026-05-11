@@ -1,3 +1,715 @@
+commit 02c34b80ccf838436258991e967a026ff718850d
+Merge: 4191b49a c2fa29c0
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Mon May 11 15:14:00 2026 -0400
+
+    Merge remote-tracking branch 'refs/remotes/org-ai-assisted/master'
+
+commit 4191b49a073728192a0fdd76f640b27cc0d4a00b
+Merge: 82a56984 9a701e10
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Mon May 11 13:20:43 2026 -0400
+
+    Merge remote-tracking branch 'refs/remotes/ArrayBolt3/arraybolt3/trixie'
+
+commit 9a701e10e877b9eb60c4a59c74e8798cc1221df5
+Author: Aaron Rainbolt <arraybolt3@gmail.com>
+Date:   Sun May 10 21:50:35 2026 -0400
+
+    Misc fixes and TODOs
+
+commit c2fa29c067a24a81a19ec568f2676aa8b6fc877b
+Author: assisted-by-ai (Bot Account) <228987186+assisted-by-ai@users.noreply.github.com>
+Date:   Sun May 10 20:18:59 2026 -0400
+
+    workflows: add concurrency blocks (#7)
+
+    5 cancellable + 1 singleton (coverity).
+
+commit d0bf18601b3b9158292e1a904e39eaaaba717d57
+Author: assisted-by-ai (Bot Account) <228987186+assisted-by-ai@users.noreply.github.com>
+Date:   Sun May 10 17:59:39 2026 -0400
+
+    codex-review: forward only OPENAI_API_KEY explicitly (#6)
+
+    Replace secrets: inherit with explicit single-secret map.
+
+commit 2d46c0027ef104526577ab3e22b25f3c43ae02b7
+Author: assisted-by-ai (Bot Account) <228987186+assisted-by-ai@users.noreply.github.com>
+Date:   Sun May 10 17:22:37 2026 -0400
+
+    workflows: drop "bash" prefix on ci/ scripts; rely on shebang (#5)
+
+    Apply helper-scripts #19 pattern across 5 security-misc workflows (8 invocations).
+
+commit 82a56984a6a4270ab4d77199abcbe5b1fa24e6ae
+Merge: b4fa999c c2513d3b
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Sun May 10 15:31:44 2026 -0400
+
+    Merge remote-tracking branch 'org-ai-assisted/master'
+
+commit c2513d3be3adc9e8079aae91895b4818ae4d4d0b
+Author: assisted-by-ai (Bot Account) <228987186+assisted-by-ai@users.noreply.github.com>
+Date:   Sun May 10 15:29:47 2026 -0400
+
+    coverity: project-name slash form + explicit secrets map (#4)
+
+    Fix Coverity scan: API requires Kicksecure/security-misc (slash) not Kicksecure-security-misc (dash). Explicit COVERITY_SCAN_{TOKEN,EMAIL} secrets map.
+
+commit f24b820efae19cd6197757a007af976a2a300eb6
+Author: assisted-by-ai (Bot Account) <228987186+assisted-by-ai@users.noreply.github.com>
+Date:   Sun May 10 15:29:45 2026 -0400
+
+    re-apply secrets + apt-cache hardening on top of upstream rebase (#3)
+
+    Re-applied PR#2 hardening on top of upstream Kicksecure/security-misc master b4fa999c.
+
+commit b4fa999cb5f35276e0fc494806a9f7fdbc876145
+Merge: c21437fd ee1b8549
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Sun May 10 14:46:07 2026 -0400
+
+    Merge remote-tracking branch 'refs/remotes/org-ai-assisted/master'
+
+commit ee1b85491e883f6c5ea431e9a3eeb42a39b36ca1
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 18:48:08 2026 +0000
+
+    codeql: drop packages: read
+
+    None of our CodeQL builds pull from ghcr.io (kloak runs
+    'bash build.sh', security-misc runs 'bash ci/codeql-build.sh',
+    helper-scripts and msgcollector are pure-Python). Drop the
+    defensive 'packages: read' grant in favor of least-privilege.
+
+    A future consumer that genuinely authenticates to GitHub
+    Packages from a CodeQL build step can re-add it locally.
+
+    Reusable docblock notes the rationale so a future maintainer
+    doesn't reflexively re-add it.
+
+commit c864386870b0fd5366441d8e62e6e41869eb06ef
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 15:49:01 2026 +0000
+
+    claude-code: restore id-token: write
+
+    Reverts the earlier 'drop id-token' commit. Verified against a live
+    workflow log that the action DOES use OIDC federation:
+
+      Requesting OIDC token...
+      OIDC token successfully obtained
+      Exchanging OIDC token for app token...
+      Using GITHUB_TOKEN from OIDC
+
+    The action federates the runner's id-token to an Anthropic-controlled
+    GitHub App which mints a higher-privilege GITHUB_TOKEN used to post
+    review comments. Without id-token: write the next run would have
+    failed with 'Could not fetch an OIDC token'.
+
+commit 318322481575fcee29a05a693f47e6a4f4e4fa29
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 15:33:25 2026 +0000
+
+    dfuzzer-run.sh: bash style guide compliance
+
+    - R-010 strict-mode quintet: add 'shopt -s inherit_errexit' and
+      'shopt -s shift_verbose' to outer script and to the inner
+      heredoc.
+    - R-030 printf format: drop embedded format strings (e.g.
+      'printf 'foo=%s\n' "${x}"'); pass the entire message in the
+      data string of 'printf '%s\n' ...'.
+    - R-051 traps as named functions: extract inline EXIT trap
+      command-strings into named cleanup functions
+      (dfuzzer_run_cleanup, dfuzzer_inner_cleanup) registered after
+      the variables they reference are initialized.
+    - R-061 split combined short flags: 'rm -rf' -> 'rm -r -f'.
+    - shellcheck SC2317 (unreachable trap-callback) suppressed
+      inline.
+
+commit fb9ac8ecb248b3f4777a9ac80da9f01c09fd4200
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 15:24:19 2026 +0000
+
+    scorecard: drop inline cron allocation table
+
+    The org-wide allocation table is single-source-of-truth in
+    developer-meta-files/.github/workflows/reusable-scorecard.yml. Each
+    consumer should carry only its own cron line with no commentary.
+
+commit cff945d545ab6d4513b2e4541e74c26bdd9e6df6
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 15:21:18 2026 +0000
+
+    claude-code: drop id-token: write
+
+    The reusable workflow no longer needs id-token: write (the action
+    authenticates to api.anthropic.com via a static ANTHROPIC_API_KEY;
+    OIDC federation is unused). Drop the permission to honor
+    least-privilege - an OIDC token, if forged or leaked, can
+    authenticate to cloud-provider integrations.
+
+commit b0c55cb8dc406b5e9019d89d7e75b71f3ff565b8
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 14:28:16 2026 +0000
+
+    dfuzzer-run.sh: pass --no-suppressions
+
+    dfuzzer 2.6 treats 'no suppression file found at any of the
+    3 candidate paths (./dfuzzer.conf, ~/.dfuzzer.conf,
+    /etc/dfuzzer.conf)' as a fatal error and exits 1 before fuzzing
+    anything (verified in upstream src/dfuzzer.c main() - the
+    df_suppression_load() call returns -1, which prints the literal
+    'Exit status: 1' and goto cleanup). On a fresh GitHub runner
+    none of those paths exist, so the workflow always failed
+    immediately. We don't want suppressions anyway: we want every
+    crash / unexpected exit reported.
+
+commit 167222754f61bd7c7908c74d94e8fb7e762f9f25
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 14:13:34 2026 +0000
+
+    dfuzzer-run.sh: pass explicit object path
+
+    dfuzzer defaults to object path '/' which has no methods registered
+    on fm-shim-backend (its methods are at /org/freedesktop/FileManager1).
+    Without -o the previous runs exited in milliseconds with no fuzzing
+    performed.
+
+commit d8dac7a1a2a8ccd01bddff4d405ca195befd489d
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 14:08:24 2026 +0000
+
+    dfuzzer-run.sh: diagnostic logging + busctl introspect probe
+
+    After two iterations where dfuzzer exits 1 with no usable
+    diagnostic ('Cannot open suppression file ... Exit status: 1'
+    - which is dfuzzer's normal idle output, not the actual error),
+    add three probes that surface the real state of the world:
+
+    1. fm-shim-backend stdout/stderr captured to a tmpdir log file
+       and dumped via ::group::. Without a tty its output is block-
+       buffered and gets lost when the kill-on-EXIT trap fires;
+       redirecting to a file flushes on close.
+
+    2. NameHasOwner poll loop (up to 5 attempts at 1s each) that
+       confirms the well-known name is registered before dfuzzer
+       tries to talk to it. Fails fast and surfaces the backend's
+       stdout if the backend dies during startup.
+
+    3. 'busctl --user introspect' before dfuzzer to verify the
+       Introspectable wiring (the just-added handle_introspect()
+       in fm-shim-backend.c). If busctl can't introspect, dfuzzer
+       won't be able to either - and we'll see exactly where the
+       chain breaks.
+
+    This is exactly the diagnostic loop helper-scripts' fuzz.yml
+    went through during its initial Atheris/CFL bring-up; document
+    the pattern in agents/fuzzing.md once the dust settles.
+
+commit 0d3a8a120e5c3c7f1f7919c033b52fcc060db81e
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 14:05:50 2026 +0000
+
+    fm-shim-backend: implement org.freedesktop.DBus.Introspectable.Introspect
+
+    Real bug found while wiring up the dfuzzer workflow: fm-shim-
+    backend's hardcoded interface filter rejects every method call
+    that isn't on org.freedesktop.FileManager1, including the
+    standard org.freedesktop.DBus.Introspectable.Introspect that
+    every introspection-aware D-Bus client expects.
+
+    Symptoms before this fix:
+    - 'busctl introspect --user org.freedesktop.FileManager1
+      /org/freedesktop/FileManager1' fails with 'Unknown interface'.
+    - 'd-feet' / 'qdbusviewer' don't enumerate the service's
+      methods.
+    - dfuzzer exits 1 with no usable output (can't introspect ->
+      doesn't know what to fuzz).
+
+    Fix is conventional: implement Introspect to return a static XML
+    description of the FileManager1 surface plus the standard
+    Introspectable interface itself. Argument signatures ('as' for
+    the URI list, 's' for the startup ID) match the freedesktop.org
+    file-manager-interface spec. Static string + one extra branch
+    in dispatch; no runtime cost.
+
+    Discovered by: ci/dfuzzer-run.sh first integration run on
+    master 6ed21ea (2026-05-08). With this patch dfuzzer can
+    introspect, enumerate the three methods (ShowFolders,
+    ShowItems, ShowItemProperties), and proceed to fuzz them.
+
+commit 6ed21ea68d8b8f5eaa6077e9a171d1bb996bebf5
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 14:02:06 2026 +0000
+
+    dfuzzer-run.sh: manual backend launch instead of dbus auto-activation
+
+    XDG-local .service file auto-activation isn't reliable inside
+    dbus-run-session's transient bus (the dbus-daemon spawned there
+    seems not to read $XDG_DATA_HOME/dbus-1/services/ - dfuzzer
+    exits 1 with no meaningful error before any fuzzing happens).
+
+    Switched approach:
+      1. Inside dbus-run-session, start fm-shim-backend in the
+         background. It registers the org.freedesktop.FileManager1
+         well-known name on the session bus and enters its dispatch
+         loop.
+      2. sleep 1 + kill -0 check to surface 'backend died during
+         startup' before dfuzzer's misleading 'name not found' error.
+      3. Run dfuzzer against the now-registered name.
+      4. EXIT-trap kills the backend at the end.
+
+    Also restructured to avoid multi-level shell quoting: the inner
+    script lives in a tempfile and gets the binary path + seconds
+    budget as positional args. Easier to read; bug-class found while
+    debugging.
+
+    dfuzzer flag now '-I 50' (50 iterations per method, default per-
+    method coverage on the small FileManager1 surface). Total wall-
+    clock still bounded by 'timeout --preserve-status' wrapper.
+
+commit 80089f9e7a452dead2fe5b6c2217e2f02426ed8d
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 13:59:36 2026 +0000
+
+    dfuzzer-run.sh: fix dfuzzer flag set + use shell timeout
+
+    Three corrections after the v2.6 source-code check:
+
+    1. dfuzzer 2.6 takes '-n BUS_NAME' (long form '--bus' - misnamed
+       in upstream; semantically a bus-NAME value). The previous
+       '--name' / '--bus session' invocation produced
+       'unrecognized option' and dfuzzer exited 1 before fuzzing
+       anything.
+
+    2. dfuzzer has NO time-bounded flag - only iteration counts.
+       Wrap with shell 'timeout --preserve-status' to enforce a
+       per-job time budget. Exit code 124 (budget reached) is
+       treated as success since hitting the budget means we got
+       the configured amount of fuzzing.
+
+    3. Removed '--bus session' - dfuzzer auto-detects the bus from
+       DBUS_SESSION_BUS_ADDRESS (set by dbus-run-session above),
+       which is what we want.
+
+    The 'set -o errexit' inside the inner bash -c was also dropped
+    because we now want the wrapper script (not errexit) to drive
+    the exit-code interpretation; dfuzzer's real exit code reaches
+    us via 'rc=$?' and is mapped to a friendly outcome string.
+
+commit 19f88613f2d0b881614615daf4e24e99025e0b34
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 13:56:47 2026 +0000
+
+    dfuzzer.yml: fix binary path (build/dfuzzer not build/src/dfuzzer)
+
+commit e54cf73996fec5a7737ee19bf2701a5385054d87
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 13:55:13 2026 +0000
+
+    dfuzzer.yml: bump tag pin v1.7 -> v2.6 (real latest)
+
+commit 487a08d1caa42bed0f3b821f2bacfcb09fc990f6
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 13:53:27 2026 +0000
+
+    dfuzzer.yml: build dfuzzer from source
+
+    dfuzzer is not in the Ubuntu 24.04 (noble) archive (verified
+    via packages.ubuntu.com - 'No such package'). Switch from
+    apt-install to a from-source build pinned at the upstream
+    v1.7 tag. Build deps (meson/ninja/glib/xsltproc/docbook)
+    added; runtime apt deps (dbus, libdbus-1-dev, libsystemd-dev,
+    pkg-config, gcc) kept.
+
+commit 16a684b4a5fddbdd29bda5ddc01ea1f233f98316
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 13:51:01 2026 +0000
+
+    fuzzing: add dfuzzer workflow for fm-shim-backend D-Bus surface
+
+    Wires up dfuzzer (Debian-archive-shipped D-Bus service fuzzer)
+    against the fm-shim-backend binary's org.freedesktop.FileManager1
+    surface. Process-level fuzzing complementing the in-process
+    Hypothesis suite already covering fm_shim_frontend.
+
+    What gets exercised:
+      - D-Bus marshaling glue (libdbus-1 path).
+      - Method dispatch in main()'s message loop.
+      - sd_notify error path under transient session bus.
+      - Signal handler interactions.
+      - Resource lifecycle across method calls (fd leaks etc).
+
+    What's NOT exercised here:
+      - The frontend prompt logic (covered by Hypothesis tests).
+      - The in-process parser (libFuzzer harness deferred per
+        AGENTS.md fuzzing notes).
+
+    Workflow body in ci/dfuzzer-run.sh (R-100):
+      1. compile-fm-shim-backend -> tmpdir binary
+      2. Write XDG-local D-Bus session service file pointing at
+         the tmpdir binary so dbus auto-activates it on first
+         method call.
+      3. dbus-run-session boots a transient session bus and runs
+         dfuzzer --bus session --name org.freedesktop.FileManager1
+         --max-time $DFUZZER_SECONDS --verbose.
+
+    Trigger: workflow_dispatch only initially (mirrors helper-
+    scripts/fuzz.yml). Once a green-baseline run lands, the
+    commented-out path-filtered pull_request trigger can be
+    enabled. Default per-method budget 60s; overridable via
+    workflow_dispatch input.
+
+    Note: dfuzzer is in the Ubuntu universe pocket (apt-installable
+    on ubuntu-latest by default). No third-party action.
+
+commit e1ff1f8e1a7c3741ee1d6464a16544069fbda822
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 13:34:19 2026 +0000
+
+    ci: switch reusable refs to 'reusable-<name>.yml'
+
+    Seven 'uses:' lines (codeql, scorecard, claude-code-review,
+    codex-review, coverity, cppcheck, bandit) repointed at the
+    renamed reusable files in developer-meta-files.
+
+commit 30d58b0fc48797bf6e9269b0d755792b3ebb6b7c
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 13:27:50 2026 +0000
+
+    ci: gitignore __pycache__; remove the two stray files just committed
+
+    The Hypothesis test commit accidentally checked in two .pyc
+    files under ci/tests/fm_shim_frontend/__pycache__/ from the
+    local validation run. Drop them, add **/__pycache__/ to
+    .gitignore so the next 'git add -A' does not re-include them.
+
+commit 3f8233b18d05b7d90c137cf1f49e780a2cc0be6c
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 13:27:31 2026 +0000
+
+    fuzzing: add Hypothesis property tests; fix ENAMETOOLONG crash
+
+    Adds ci/tests/fm_shim_frontend/test_property.py (six property
+    tests over get_path_list_from_uris, plus a deterministic
+    regression suite of nine adversarial inputs) wired into
+    .github/workflows/lint-python.yml.
+
+    The fuzz suite immediately found a real exploitable bug at
+    introduction: an attacker who can deliver a URI with a single
+    path component longer than NAME_MAX (255 bytes on Linux) crashed
+    the process via an uncaught OSError(ENAMETOOLONG=36) from
+    Path.exists(). Fixed by wrapping the exists() call in
+    try/except OSError - any OSError is treated as 'non-existent,
+    skip' (same path the False branch was already handling).
+
+    The bug is reachable from an attacker process via the
+    FileManager1 D-Bus surface (other desktop apps can pass URI
+    lists). Severity: local DoS of the fm-shim-frontend prompt.
+
+    Other infrastructure:
+
+    - ci/tests/fm_shim_frontend/conftest.py stubs out 'stdisplay'
+      (helper-scripts package, not in the runner's apt) and the
+      PyQt5 Qt* submodules (a real pyqt5 install would still be
+      needed for live use, but isn't required for property-testing
+      the URI validator function in isolation).
+    - agents/fuzzing.md documents the layout and the local-run
+      invocation, mirroring helper-scripts' agents/fuzzing.md.
+    - AGENTS.md gains a Component Notes pointer to the new doc.
+
+    ClusterFuzzLite (Atheris coverage-guided fuzzing) is NOT wired
+    yet; deferred until the property-test suite has been running
+    long enough to pick the easy wins.
+
+commit f4ab12218cef102b30a083f206380ba9e4dc1b76
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 12:38:25 2026 +0000
+
+    static-analysis: add cppcheck + bandit wrappers
+
+    Free local-runnable extras complementing CodeQL and Coverity:
+
+      cppcheck    - C static analyzer over usr/src/security-misc/.
+                    Re-uses ci/codeql-prepare.sh to symlink the
+                    genmkfile-tagged '*.c#security-misc-shared'
+                    files to clean '*.c' names cppcheck discovers
+                    by extension.
+
+      bandit      - Python security-focused analyzer over
+                    usr/lib/python3/dist-packages/fm_shim_frontend/.
+                    Same prepare-command for the '*.py#tag' files.
+
+commit 767088d43fcb62d82c5a0e664ba46b4939632e2d
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 12:07:44 2026 +0000
+
+    coverity: use real Coverity Scan project name
+
+    The scan.coverity.com project for this repo is registered under
+    'Kicksecure-security-misc' (verified at
+    https://scan.coverity.com/projects/Kicksecure-security-misc).
+    The reusable wrapper was passing the bare repo name
+    'security-misc' which produced HTTP 401 on cov-build download
+    because the project+token pair did not match.
+
+commit cebe274c8bb2c82122ebfa88699ea410f55ca788
+Merge: c21437fd 16cc61e5
+Author: assisted-by-ai (Bot Account) <server@kicksecure.com>
+Date:   Fri May 8 08:01:49 2026 -0400
+
+    Merge pull request #1 from org-ai-assisted/claude/test-github-token-access-HVDXY
+
+    codeql: add static-analysis workflow (python + c-cpp)
+
+commit 16cc61e58fb990b8c78cb402c20161bacfcaea2f
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 12:00:02 2026 +0000
+
+    lint-python: use flake8 --select=F; add suppressions to fsw line
+
+    Two fixes for the just-added Python lint workflow.
+
+    1. Switch from plain pyflakes3 to 'flake8 --select=F'.
+
+       pyflakes by design does not honor any suppression comment - not
+       '# noqa', not '# pylint: disable', nothing. There is no
+       escape hatch for intentional violations short of a code
+       rewrite. flake8 wraps pyflakes (same F-class checks) and adds
+       '# noqa' support, which is the standard pyflakes-aware
+       suppression. '--select=F' restricts to F-class rules only
+       (undefined names, unused imports, unused locals, ...) and
+       skips E/W PEP8 style noise that would clash with the
+       codebase's '##' block-comment convention (E266).
+
+    2. Apply '# noqa: F841 # pylint: disable=unused-variable' to the
+       intentionally-retained QWindow reference in main(). The binding
+       is required to keep the QWindow alive while app.exec_() is
+       running (Qt does not always retain Python wrappers for top-
+       level windows without a parent). Both pyflakes (F841) and
+       pylint (unused-variable) flagged it as unused; per-tool
+       pragmas are needed because the two tools do not share a
+       common 'intentionally unused local' marker.
+
+    Locally verified: 'flake8 --select=F' returns rc=0 against the
+    prepared (symlinked) source paths after these changes.
+
+commit 7892d45da7147905dfe1831455a01f732d83ec38
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 11:55:32 2026 +0000
+
+    Revert "TEMP: point coverity wrapper at feature branch for end-to-end test"
+
+    End-to-end test requires both this PR and developer-meta-files PR
+    to land on master first (workflow_dispatch needs the workflow file
+    on the default branch per G-A-003). The TEMP @feature-branch ref
+    becomes obsolete once dev-meta-files PR #7 merges and '@master'
+    resolves to the new reusable. Reverting now to keep the wrapper
+    clean for merging.
+
+commit 40cc7953c788bd61bae7abde24bda981fb9f407f
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 11:54:45 2026 +0000
+
+    TEMP: point coverity wrapper at feature branch for end-to-end test
+
+    Reverts to '@master' once developer-meta-files PR #7 merges. Used
+    to validate the reusable resolves and the orchestration scripts
+    (check-secrets, download, build-python, submit) execute cleanly
+    end-to-end on a real consumer before the reusable is published.
+
+commit 2950603574573403c2c82a233fe14f5bd32ba42f
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 11:53:27 2026 +0000
+
+    lint-python: simple Python lint for fm_shim_frontend
+
+    Two error-only checks (no style noise):
+
+      pyflakes3        - undefined names, unused imports, etc.
+      pylint --errors  - E*** rules only (skips C/W/R categories).
+
+    Apt-installs python3-pyqt5 so the linters can resolve the PyQt5
+    imports rather than emitting blanket import-error noise. Re-uses
+    ci/codeql-prepare.sh to symlink the genmkfile-tagged '*.py#<tag>'
+    sources to extension-clean paths the linters discover.
+
+    Triggers are path-filtered to fm_shim_frontend/ + this workflow +
+    the prepare script, so unrelated changes do not run it.
+
+commit de73399046061640a48f630e3e8da7b22da90814
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 11:46:23 2026 +0000
+
+    coverity: add Python coverity scan via org-wide reusable
+
+    Adds a Coverity Scan wrapper for the Python sources
+    (usr/lib/python3/dist-packages/fm_shim_frontend/...). C sources
+    under usr/src/security-misc/ stay covered by CodeQL only for now;
+    revisit if the C surface grows enough to justify a multi-language
+    cov-build.
+
+    Cron slot '30 6 * * 0' offset from helper-scripts ('0 6 * * 0').
+
+commit 54aec391d63eec0a73751c352f8684b4fb4ee75e
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 11:35:22 2026 +0000
+
+    workflows: secrets:inherit + add scorecard wrapper
+
+    - ai-review wrappers: replace explicit secret-mapping with
+      'secrets: inherit'. Org-wide ANTHROPIC_API_KEY /
+      OPENAI_API_KEY propagate without per-repo boilerplate.
+    - scorecard wrapper added; calls the existing reusable in
+      developer-meta-files. Cron slot '30 5 * * 0' keeps it offset
+      from the org's other Scorecard slots.
+
+    Note: this commit is unsigned because security-misc is not yet
+    registered with the org's commit-signing service.
+
+commit fc643aaa4603ff7e65706ade6b1edea9ba9eb735
+Author: Claude <noreply@anthropic.com>
+Date:   Fri May 8 11:27:48 2026 +0000
+
+    ai-reviews: add Claude + Codex review wrappers
+
+    Two minimal consumer wrappers calling the org-wide reusables in
+    developer-meta-files:
+
+      .github/workflows/claude-code.yml
+      .github/workflows/codex-review.yml
+
+    Behavior matches the kloak/helper-scripts setup: pull_request +
+    comment-triggered Claude review; pull_request + workflow_dispatch
+    (fork-PR override) Codex review. Allow-lists inherit the
+    reusable's defaults.
+
+    Requires repo secrets ANTHROPIC_API_KEY and OPENAI_API_KEY to be
+    set before these produce useful output.
+
+    Note: this commit is unsigned because security-misc is not yet
+    registered with the org's commit-signing service.
+
+commit 7b5d353109a82246039de6c9c984f58385dccf9a
+Author: Claude <noreply@anthropic.com>
+Date:   Thu May 7 23:09:37 2026 +0000
+
+    codeql wrapper: trim to minimal; link to centralized docs
+
+    Drop the scope/#tag/cron-allocation prose - those notes belong in
+    the reusable's header on developer-meta-files master, not duplicated
+    here. One-line pointer at the URL is enough; readers needing to
+    understand the prepare-command + build-command shape follow the
+    link to the centralized doc.
+
+commit ad0d004561ce5ffc407f53282fd5d4eecac295ba
+Author: Claude <noreply@anthropic.com>
+Date:   Thu May 7 23:07:20 2026 +0000
+
+    security-misc: extract C compile step into reusable helpers
+
+    Resolves the TODO atop usr/libexec/security-misc/emerg-shutdown:
+
+      > TODO: Move most of this to a build script that will compile
+      > and place under /usr/bin rather than /run.
+
+    The motivating use case is also that CodeQL's CI compile path
+    (ci/codeql-build.sh) was duplicating the gcc command, including
+    ~70 hardening flags. With ~70 flags in two places, drift was a
+    matter of when, not if.
+
+    New helpers (no '.sh' extension to match the rest of usr/libexec/
+    security-misc/):
+
+      usr/libexec/security-misc/compile-fm-shim-backend
+      usr/libexec/security-misc/compile-emerg-shutdown
+
+    Each is a pure compile - takes (source, output) positionals, runs
+    gcc with the project's hardening flag set, exits non-zero on
+    failure. No chmod, no mv, no install - the caller decides what to
+    do with the binary.
+
+    Consumers:
+
+      build-fm-shim-backend  - keeps mktemp/trap/chmod/mv lifecycle,
+                               delegates the gcc invocation.
+      emerg-shutdown         - keeps the dracut/config/memlockd/exec
+                               logic, delegates the gcc invocation.
+                               The hardening flag array and machine-
+                               type branching go away from this file.
+      ci/codeql-build.sh     - drops the inline gcc, calls both
+                               compile- helpers. Single source of
+                               truth: CI's hardening flags == runtime's.
+
+    Also extends ci/codeql-prepare.sh to symlink '*.c#<tag>' to clean
+    '*.c' names (in addition to '*.py#<tag>'). gcc selects driver
+    behavior by file extension - a '*.c#<tag>' source is misclassified
+    as a linker script ('file format not recognized'). Verified
+    locally: with the symlinks in place, the helpers produce both
+    binaries (fm-shim-backend dynamic 49 KB, emerg-shutdown static
+    875 KB) without warnings under x86_64-linux-gnu.
+
+    Wires the c-cpp CodeQL job to run codeql-prepare.sh too via the
+    reusable workflow's prepare-command hook.
+
+commit f03270a46b476f354065f7b56dca523a50a1af8d
+Author: Claude <noreply@anthropic.com>
+Date:   Thu May 7 22:55:39 2026 +0000
+
+    codeql: align ci helpers with bash-style-guide
+
+    Per developer-meta-files agents/bash-style-guide.md and pre-push-
+    checklist:
+
+    - R-002: add the 'AI-Assisted' header marker on the new bash
+      scripts and the workflow YAML.
+    - R-010: add 'set -o errtrace' to both ci/codeql-*.sh.
+    - pkg-config: keep the unquoted '\$(pkg-config ...)' subshells
+      matching the upstream pattern in build-fm-shim-backend; add a
+      NOTE comment and a 'shellcheck disable=SC2046' since the rule
+      fires on the intentional shape (AGENTS.md 'pkg-config quoting
+      in build script' rule).
+
+commit 80ce8c9e8d47ee0d27465e69db6425d3ff18ee4a
+Author: Claude <noreply@anthropic.com>
+Date:   Thu May 7 22:50:17 2026 +0000
+
+    codeql: add static-analysis workflow (python + c-cpp)
+
+    Adds .github/workflows/codeql.yml as a thin wrapper around the
+    org-wide reusable workflow in developer-meta-files. Two jobs - one
+    per language - matching the source mix actually present in the
+    repo:
+
+      python:  usr/lib/python3/dist-packages/fm_shim_frontend/
+      c-cpp:   usr/src/security-misc/{emerg-shutdown,fm-shim-backend}.c
+
+    Source files in this repo carry a '#<package-tag>' suffix per the
+    genmkfile installable-routing convention; that suffix hides them
+    from CodeQL's Python extractor (which discovers by file extension).
+    Two helper scripts handle this:
+
+      ci/codeql-prepare.sh - run via the reusable's pre-init hook;
+        creates extension-clean symlinks for each '*.py#tag' source.
+      ci/codeql-build.sh   - manual build for c-cpp; installs build
+        deps and runs gcc -c on each .c file. The C extractor traces
+        compiler invocations rather than scanning by extension, so
+        the tagged paths can be passed to gcc verbatim.
+
+    Cron slot picked to avoid collision with the org's existing
+    CodeQL slots (helper-scripts '17 4 * * 0', kloak '25 3 * * 5').
+
+    Note: this commit is unsigned because security-misc is not yet
+    registered with the org's commit-signing service.
+
+commit c21437fd83c5a86e6573ed76c2ecadcbfddacd45
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Sat May 2 08:48:24 2026 +0000
+
+    bumped changelog version
+
 commit 66d509f1995be49919c6f9d67cb25111678b1172
 Author: Patrick Schleizer <adrelanos@whonix.org>
 Date:   Fri May 1 16:45:03 2026 -0400
