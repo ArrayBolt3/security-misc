@@ -19,6 +19,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   bandit:
     uses: org-ai-assisted/developer-meta-files/.github/workflows/reusable-bandit.yml@master
@@ -28,6 +32,6 @@ jobs:
       ## (bandit discovers files by '.py' extension; would otherwise
       ## miss them). The codeql-prepare.sh script symlinks them to
       ## clean '*.py' names.
-      prepare-command: bash ci/codeql-prepare.sh
+      prepare-command: ci/codeql-prepare.sh
     permissions:
       contents: read

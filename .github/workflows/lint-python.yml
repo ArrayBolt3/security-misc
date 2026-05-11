@@ -95,7 +95,7 @@ jobs:
             python3-pyqt5 python3-pyqt5.sip
 
       - name: Prepare extension-clean Python source paths
-        run: bash ci/codeql-prepare.sh
+        run: ci/codeql-prepare.sh
 
       - name: flake8 (pyflakes checks only)
         ## Pass the symlinked clean-name files explicitly. Without
