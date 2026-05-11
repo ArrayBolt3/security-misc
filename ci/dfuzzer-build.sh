@@ -47,6 +47,7 @@ sudo --non-interactive apt-get install --yes --no-install-recommends \
   libdbus-1-dev libsystemd-dev pkg-config gcc
 
 ## Phase 2: dfuzzer build.
+## TODO: Better to clone the whole repository, then check out a commit hash?
 git clone --depth 1 --branch "${DFUZZER_TAG}" \
   https://github.com/dbus-fuzzer/dfuzzer /tmp/dfuzzer
 meson setup --buildtype=release /tmp/dfuzzer/build /tmp/dfuzzer

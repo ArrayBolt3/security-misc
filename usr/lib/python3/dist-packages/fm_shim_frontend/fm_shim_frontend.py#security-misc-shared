@@ -600,15 +600,14 @@ def get_path_list_from_uris(
         try:
             path_exists = path_item.exists(follow_symlinks=False)
         except OSError as exc:
-            ## Path.exists() can raise on pathological inputs - in
-            ## particular ENAMETOOLONG (errno 36) when any single
-            ## path component exceeds NAME_MAX. An attacker who can
-            ## inject a URI here (D-Bus FileManager1 calls from
-            ## another desktop app) could otherwise crash this
-            ## process by sending one long path. Treat as
-            ## "non-existent, skip" - same as the False branch.
-            ## Caught by ci/tests/fm_shim_frontend/test_property.py
-            ## hypothesis fuzz suite (long-path adversarial input).
+            ## Under Python 3.13, Path.exists() can raise on pathological
+            ## inputs - in particular ENAMETOOLONG (errno 36) when any single
+            ## path component exceeds NAME_MAX. An attacker who can inject a
+            ## URI here (D-Bus FileManager1 calls from another desktop app)
+            ## could otherwise crash this process by sending one long path.
+            ## Treat as "non-existent, skip" - same as the False branch. This
+            ## issue does not exist in Python 3.14, so we can remove this
+            ## check in Forky.
             print(
                 f"WARNING: Path could not be checked (errno "
                 f"{exc.errno}: {exc.strerror}), skipping. Sanitized "
@@ -714,14 +713,9 @@ def main() -> NoReturn:
     timer.timeout.connect(lambda: None)
     timer.start(500)
 
-    ## Intentionally retained reference - otherwise the QWindow
-    ## could be GC'd while app.exec_() is still running. The
-    ## variable is never read; per-tool pragmas suppress the
-    ## resulting "unused" warnings (pylint and pyflakes do not
-    ## share a common 'intentionally unused' marker for local
-    ## variables; pyflakes honors '# noqa', pylint honors
-    ## '# pylint: disable=...').
-    fsw: FmShimWindow = FmShimWindow(path_list)  # noqa: F841  # pylint: disable=unused-variable
+    ## Keep a reference to the window so it isn't garbage-collected.
+    # pylint: disable=unused-variable
+    fsw: FmShimWindow = FmShimWindow(path_list)  # noqa: F841
     app.exec_()
     sys.exit(0)
 

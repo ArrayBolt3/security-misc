@@ -71,6 +71,7 @@ printf '%s\n' "::endgroup::"
 inner="${work}/dfuzzer-inner.sh"
 cat > "${inner}" <<'INNER'
 #!/bin/bash
+set -o errexit
 set -o nounset
 set -o pipefail
 set -o errtrace
@@ -103,7 +104,7 @@ trap dfuzzer_inner_cleanup EXIT
 ## Wait up to 5s for the backend to register the well-known name
 ## on the bus. dbus-run-session-internal name registration is
 ## usually < 100ms but allow a generous budget for slow runners.
-for _i in 1 2 3 4 5; do
+for _i in {1..5}; do
   sleep 1
   if ! kill -0 "${backend_pid}" 2>/dev/null; then
     printf '%s\n' "::error::fm-shim-backend exited during startup"

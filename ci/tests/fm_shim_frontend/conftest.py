@@ -22,6 +22,12 @@
 ##     instances can't be used as base classes in 'class X(Mock):'.
 ##     Real type() works.
 
+## TODO: Try to get rid of this file. We can install helper-scripts before
+## running the tests to get stdisplay, and as long as the test code paths don't
+## call QApplication(), the crash during test issue should be avoidable. Using
+## the real modules instead of stubs will make the tests more reliable and
+## prevent possible future complications.
+
 import sys
 import types
 
@@ -52,6 +58,9 @@ class _FakeQtModule(types.ModuleType):
         ## Cache the synthesized class so attribute identity is
         ## stable across repeated lookups (PyQt5.QtCore.Qt is the
         ## same object every time, etc.).
+        ##
+        ## FIXME: This does cache the generated class, but it regenerates it
+        ## and clobbers the cache every time it is called thereafter.
         cls = type(name, (object,), {})
         setattr(self, name, cls)
         return cls
