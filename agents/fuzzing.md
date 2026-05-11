@@ -1,7 +1,9 @@
-## Copyright (C) 2026 - 2026 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
-## See the file COPYING for copying conditions.
+<!--
+Copyright (C) 2026 - 2026 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
+See the file COPYING for copying conditions.
 
-## AI-Assisted
+AI-Assisted
+-->
 
 # Fuzzing
 
@@ -19,10 +21,10 @@ Currently covered:
 - `ci/tests/fm_shim_frontend/test_property.py` - Hypothesis
   property tests over `get_path_list_from_uris`, the URI-validation
   chokepoint between the FileManager1 D-Bus surface and the user-
-  facing dialog. Six properties (never_raises, output_paths_
-  absolute, output_no_dangerous_chars, output_unique_and_sorted,
-  idempotent, plus a deterministic regression-suite of nine
-  adversarial inputs).
+  facing dialog. Six properties (`never_raises`,
+  `output_paths_absolute`, `output_no_dangerous_chars`,
+  `output_unique_and_sorted`, `idempotent`, plus a deterministic
+  regression-suite of nine adversarial inputs).
 
   At introduction this suite found an exploitable bug: an attacker
   who can deliver a URI with a single path component longer than

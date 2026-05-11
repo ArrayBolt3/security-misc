@@ -48,6 +48,31 @@
 #define MAX_OPEN_PATHS 256
 #define MAX_URI_LEN 4096
 
+static const char *introspection_xml =
+  "<!DOCTYPE node PUBLIC \"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN\"\n"
+  " \"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">\n"
+  "<node xmlns:doc=\"http://www.freedesktop.org/dbus/1.0/doc.dtd\">\n"
+  "  <interface name=\"org.freedesktop.DBus.Introspectable\">\n"
+  "    <method name=\"Introspect\">\n"
+  "      <arg type=\"s\" name=\"data\" direction=\"out\"/>\n"
+  "    </method>\n"
+  "  </interface>\n"
+  "  <interface name=\"org.freedesktop.FileManager1\">\n"
+  "    <method name=\"ShowFolders\">\n"
+  "      <arg type=\"as\" name=\"URIs\" direction=\"in\"/>\n"
+  "      <arg type=\"s\" name=\"StartupId\" direction=\"in\"/>\n"
+  "    </method>\n"
+  "    <method name=\"ShowItems\">\n"
+  "      <arg type=\"as\" name=\"URIs\" direction=\"in\"/>\n"
+  "      <arg type=\"s\" name=\"StartupId\" direction=\"in\"/>\n"
+  "    </method>\n"
+  "    <method name=\"ShowItemProperties\">\n"
+  "      <arg type=\"as\" name=\"URIs\" direction=\"in\"/>\n"
+  "      <arg type=\"s\" name=\"StartupId\" direction=\"in\"/>\n"
+  "    </method>\n"
+  "  </interface>\n"
+  "</node>\n";
+
 DBusError error_data = { 0 };
 DBusConnection *dbus_conn = NULL;
 
@@ -171,8 +196,8 @@ void launch_frontend_process(const char *mode_opt, char **uri_list,
 
   /*
    * This should be impossible since uri_list_len is originally a signed
-   * integer in handle_dbus_method_call and is then cast to a size_t, but we
-   * check for this anyway.
+   * integer in handle_filemanager_method_call and is then cast to a size_t,
+   * but we check for this anyway.
    */
   if (uri_list_len > SIZE_MAX - 4) {
     warnx("launch_frontend_process: URI list too large!");
@@ -233,76 +258,31 @@ dbus_cleanup:
   }
 }
 
-/*
- * Introspection XML for the org.freedesktop.FileManager1 interface
- * we implement, plus the standard org.freedesktop.DBus.Introspectable
- * interface itself. Returned by handle_introspect() in response to
- * org.freedesktop.DBus.Introspectable.Introspect calls.
- *
- * Implementing Introspect is conventional for any D-Bus service:
- * the spec at https://dbus.freedesktop.org/doc/dbus-specification.html
- * #standard-interfaces-introspectable encourages it, dbus-send /
- * busctl / d-feet / dfuzzer all rely on it for service discovery,
- * and the cost is one static string + one branch in dispatch.
- *
- * The argument signatures here ('as' for the URI list, 's' for the
- * startup ID) match the freedesktop.org FileManager1 spec at
- * https://www.freedesktop.org/wiki/Specifications/file-manager-interface/.
- */
-static const char introspection_xml[] =
-  "<!DOCTYPE node PUBLIC \"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN\"\n"
-  " \"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">\n"
-  "<node>\n"
-  "  <interface name=\"org.freedesktop.DBus.Introspectable\">\n"
-  "    <method name=\"Introspect\">\n"
-  "      <arg name=\"data\" direction=\"out\" type=\"s\"/>\n"
-  "    </method>\n"
-  "  </interface>\n"
-  "  <interface name=\"org.freedesktop.FileManager1\">\n"
-  "    <method name=\"ShowFolders\">\n"
-  "      <arg name=\"URIs\" direction=\"in\" type=\"as\"/>\n"
-  "      <arg name=\"StartupId\" direction=\"in\" type=\"s\"/>\n"
-  "    </method>\n"
-  "    <method name=\"ShowItems\">\n"
-  "      <arg name=\"URIs\" direction=\"in\" type=\"as\"/>\n"
-  "      <arg name=\"StartupId\" direction=\"in\" type=\"s\"/>\n"
-  "    </method>\n"
-  "    <method name=\"ShowItemProperties\">\n"
-  "      <arg name=\"URIs\" direction=\"in\" type=\"as\"/>\n"
-  "      <arg name=\"StartupId\" direction=\"in\" type=\"s\"/>\n"
-  "    </method>\n"
-  "  </interface>\n"
-  "</node>\n";
-
 static void handle_introspect(DBusMessage *dbus_msg) {
-  DBusMessage *reply = NULL;
-  const char *xml_ptr = introspection_xml;
+  DBusMessage *method_return = NULL;
 
-  reply = dbus_message_new_method_return(dbus_msg);
-  if (reply == NULL) {
-    warnx("handle_introspect: dbus_message_new_method_return failed");
-    return;
+  method_return = dbus_message_new_method_return(dbus_msg);
+  if (method_return == NULL) {
+    errx(1, "handle_introspect: Could not allocate memory for a method return!");
   }
-  if (dbus_message_append_args(reply,
-        DBUS_TYPE_STRING, &xml_ptr,
-        DBUS_TYPE_INVALID) == FALSE) {
-    warnx("handle_introspect: dbus_message_append_args failed");
-    dbus_message_unref(reply);
-    return;
+  if (dbus_message_append_args(method_return,
+    DBUS_TYPE_STRING, &introspection_xml,
+    DBUS_TYPE_INVALID) == FALSE) {
+    errx(1, "handle_introspect: Could not append introspection XML to method return!");
   }
-  if (dbus_connection_send(dbus_conn, reply, NULL) == FALSE) {
-    warnx("handle_introspect: dbus_connection_send failed");
+  if (dbus_connection_send(dbus_conn, method_return, NULL) == FALSE) {
+    errx(1, "handle_introspect: Could not queue method return!");
   }
   dbus_connection_flush(dbus_conn);
-  dbus_message_unref(reply);
+  dbus_message_unref(method_return);
 }
 
 /*
- * All three of the method calls we handle take the same arguments, and we do
- * the hard work in the frontend, so we can use the same function here to
+ * All three of the file manager method calls take the same arguments, and we
+ * do the hard work in the frontend, so we can use the same function here to
  * handle all the calls.
  */
-void handle_dbus_method_call(DBusMessage *dbus_msg,
+void handle_filemanager_method_call(DBusMessage *dbus_msg,
   const char *method_call_name, const char *mode_opt) {
   char **uri_list = NULL;
   int uri_list_len_int = 0;
@@ -319,7 +299,7 @@ void handle_dbus_method_call(DBusMessage *dbus_msg,
     DBUS_TYPE_STRING, &startup_id,
     DBUS_TYPE_INVALID);
   if (!did_extract_args) {
-    warnx("handle_dbus_method_call: Received a D-Bus method call for method '%s', but could not get arguments. Error name: '%s'. Error contents: '%s'.",
+    warnx("handle_filemanager_method_call: Received a D-Bus method call for method '%s', but could not get arguments. Error name: '%s'. Error contents: '%s'.",
       method_call_name,
       error_data.name ? error_data.name : "(null)",
       error_data.message ? error_data.message : "(null)");
@@ -328,11 +308,11 @@ void handle_dbus_method_call(DBusMessage *dbus_msg,
   }
 
   if (uri_list_len_int < 0) {
-    warnx("handle_dbus_method_call: Negative URI list length received!");
+    warnx("handle_filemanager_method_call: Negative URI list length received!");
     goto method_send_reply;
   }
   if (uri_list_len_int > MAX_OPEN_PATHS) {
-    warnx("handle_dbus_method_call: Received a D-Bus method call attempting to open more than %d paths at once, ignoring.",
+    warnx("handle_filemanager_method_call: Received a D-Bus method call attempting to open more than %d paths at once, ignoring.",
       MAX_OPEN_PATHS);
     goto method_send_reply;
   }
@@ -340,11 +320,11 @@ void handle_dbus_method_call(DBusMessage *dbus_msg,
 
   for (uri_list_idx = 0; uri_list_idx < uri_list_len; uri_list_idx++) {
     if (uri_list[uri_list_idx] == NULL) {
-      warnx("handle_dbus_method_call: Received a D-Bus method call with a NULL string, ignoring.");
+      warnx("handle_filemanager_method_call: Received a D-Bus method call with a NULL string, ignoring.");
       goto method_send_reply;
     }
     if (strnlen(uri_list[uri_list_idx], MAX_URI_LEN + 1) > MAX_URI_LEN) {
-      warnx("handle_dbus_method_call: Received a D-Bus method call attempting to open a path URI longer than %d bytes, ignoring.",
+      warnx("handle_filemanager_method_call: Received a D-Bus method call attempting to open a path URI longer than %d bytes, ignoring.",
         MAX_URI_LEN);
       goto method_send_reply;
     }
@@ -359,10 +339,10 @@ method_send_reply:
 
   method_return = dbus_message_new_method_return(dbus_msg);
   if (method_return == NULL) {
-    errx(1, "handle_dbus_method_call: Could not allocate memory for a method return!");
+    errx(1, "handle_filemanager_method_call: Could not allocate memory for a method return!");
   }
   if (dbus_connection_send(dbus_conn, method_return, NULL) == FALSE) {
-    errx(1, "handle_dbus_method_call: Could not queue method return!");
+    errx(1, "handle_filemanager_method_call: Could not queue method return!");
   }
   /*
    * We could probably get away with omitting the flush, but browsers will
@@ -499,41 +479,40 @@ int main(void) {
       goto cleanup;
     }
 
-    /*
-     * Standard D-Bus introspection. Handled BEFORE the
-     * FileManager1 interface filter below because Introspect is
-     * on the org.freedesktop.DBus.Introspectable interface, not
-     * FileManager1. Without this branch, dbus-send / busctl /
-     * d-feet / dfuzzer all see 'Unknown interface' and cannot
-     * discover the methods we expose.
-     */
-    if (strcmp(dbus_msg_iface, "org.freedesktop.DBus.Introspectable") == 0
-        && strcmp(dbus_msg_method, "Introspect") == 0) {
-      handle_introspect(dbus_msg);
+    if (strcmp(dbus_msg_iface, "org.freedesktop.DBus.Introspectable") == 0) {
+      if (strcmp(dbus_msg_method, "Introspect") == 0) {
+        handle_introspect(dbus_msg);
+      } else {
+        warnx("Received a D-Bus method call for unrecognized method '%s' on interface '%s'!",
+          dbus_msg_method, dbus_msg_iface);
+        send_error_message_maybe(dbus_msg, DBUS_ERROR_UNKNOWN_METHOD,
+          "Unknown method");
+      }
       goto cleanup;
     }
 
-    if (strcmp(dbus_msg_iface, "org.freedesktop.FileManager1") != 0) {
-      warnx("Received a D-Bus method call for interface '%s', rather than 'org.freedesktop.FileManager1'!",
-        dbus_msg_iface);
-      send_error_message_maybe(dbus_msg, DBUS_ERROR_UNKNOWN_INTERFACE,
-        "Unknown interface");
+    if (strcmp(dbus_msg_iface, "org.freedesktop.FileManager1") == 0) {
+      if (strcmp(dbus_msg_method, "ShowFolders") == 0) {
+        handle_filemanager_method_call(dbus_msg, "ShowFolders",
+          "--show-folders");
+      } else if (strcmp(dbus_msg_method, "ShowItems") == 0) {
+        handle_filemanager_method_call(dbus_msg, "ShowItems", "--show-items");
+      } else if (strcmp(dbus_msg_method, "ShowItemProperties") == 0) {
+        handle_filemanager_method_call(dbus_msg, "ShowItemProperties",
+          "--show-item-properties");
+      } else {
+        warnx("Received a D-Bus method call for unrecognized method '%s' on interface '%s'!",
+          dbus_msg_method, dbus_msg_iface);
+        send_error_message_maybe(dbus_msg, DBUS_ERROR_UNKNOWN_METHOD,
+          "Unknown method");
+      }
       goto cleanup;
     }
 
-    if (strcmp(dbus_msg_method, "ShowFolders") == 0) {
-      handle_dbus_method_call(dbus_msg, "ShowFolders", "--show-folders");
-    } else if (strcmp(dbus_msg_method, "ShowItems") == 0) {
-      handle_dbus_method_call(dbus_msg, "ShowItems", "--show-items");
-    } else if (strcmp(dbus_msg_method, "ShowItemProperties") == 0) {
-      handle_dbus_method_call(dbus_msg, "ShowItemProperties",
-        "--show-item-properties");
-    } else {
-      warnx("Received a D-Bus method call for unrecognized method '%s'!",
-        dbus_msg_method);
-      send_error_message_maybe(dbus_msg, DBUS_ERROR_UNKNOWN_METHOD,
-        "Unknown method");
-    }
+    warnx("Received a D-Bus method call for unknown interface '%s'!",
+      dbus_msg_iface);
+    send_error_message_maybe(dbus_msg, DBUS_ERROR_UNKNOWN_INTERFACE,
+      "Unknown interface");
 
 cleanup:
     if (dbus_msg != NULL) {

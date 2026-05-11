@@ -17,11 +17,10 @@
 ##   compile-emerg-shutdown <source.c> <output-binary>
 ##
 ## Used by:
-##   * usr/libexec/security-misc/emerg-shutdown  (first-run on the
-##     user's machine: compiles itself into /run/emerg-shutdown then
+##   * usr/libexec/security-misc/emerg-shutdown (first-run on the
+##     user's machine: compiles C code into /run/emerg-shutdown then
 ##     execs it)
-##   * ci/codeql-build.sh                        (CodeQL static
-##     analysis prebuild)
+##   * ci/codeql-build.sh (CodeQL static analysis prebuild)
 ##
 ## Holding the gcc command in one place keeps the runtime build path
 ## and the CI analysis path from drifting on hardening flags.
@@ -60,8 +59,8 @@ gcc_hardening_options=(
   "-Wattribute-alias=2" "-Wduplicated-branches" "-Wduplicated-cond"
   "-Wcast-align=strict" "-Wjump-misses-init" "-Wlogical-op" "-U_FORTIFY_SOURCE"
   "-D_FORTIFY_SOURCE=3" "-fstack-clash-protection" "-fstack-protector-all"
-  "-fno-delete-null-pointer-checks" "-fno-strict-overflow"
-  "-fno-strict-aliasing" "-fstrict-flex-arrays=3"
+  "-fno-delete-null-pointer-checks" "-fno-strict-aliasing"
+  "-fno-strict-overflow" "-fstrict-flex-arrays=3"
   "-ftrivial-auto-var-init=pattern" "-fPIE"
 )
 
