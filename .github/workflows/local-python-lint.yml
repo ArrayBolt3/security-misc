@@ -38,15 +38,9 @@ name: Lint Python
 
 on:
   push:
-    paths:
-      - 'usr/lib/python3/dist-packages/fm_shim_frontend/**'
-      - 'ci/codeql-prepare.sh'
-      - '.github/workflows/lint-python.yml'
+    branches: [master]
   pull_request:
-    paths:
-      - 'usr/lib/python3/dist-packages/fm_shim_frontend/**'
-      - 'ci/codeql-prepare.sh'
-      - '.github/workflows/lint-python.yml'
+    branches: [master]
   workflow_dispatch:
 
 permissions:
@@ -79,7 +73,7 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
         with:
           path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-lint-python-${{ hashFiles('.github/workflows/lint-python.yml') }}
+          key: ${{ runner.os }}-apt-lint-python-${{ hashFiles('.github/workflows/local-python-lint.yml') }}
           restore-keys: |
             ${{ runner.os }}-apt-lint-python-
 
