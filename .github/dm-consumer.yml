@@ -17,3 +17,11 @@ coverity:
   ## the API form-parameter requires the actual slash.
   project-name:    "Kicksecure/security-misc"
   canonical-repos: "Kicksecure/security-misc,org-ai-assisted/security-misc"
+
+cppcheck:
+  paths: "usr/src/security-misc"
+  ## genmkfile names the C sources '*.c#security-misc-shared'
+  ## (cppcheck discovers files by extension; would otherwise miss
+  ## them). The codeql-prepare.sh script symlinks them to clean
+  ## '*.c' names.
+  prepare-command: "ci/codeql-prepare.sh"
