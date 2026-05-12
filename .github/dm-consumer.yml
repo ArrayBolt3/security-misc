@@ -25,3 +25,16 @@ cppcheck:
   ## them). The codeql-prepare.sh script symlinks them to clean
   ## '*.c' names.
   prepare-command: "ci/codeql-prepare.sh"
+
+codeql-python:
+  ## Same prep as cppcheck: codeql-prepare.sh symlinks
+  ## '*.py#security-misc-shared' to clean '*.py' names so the
+  ## CodeQL python extractor discovers them.
+  prepare-command: "ci/codeql-prepare.sh"
+
+codeql-cpp:
+  ## codeql-prepare.sh handles both python and c-cpp source
+  ## symlinks; codeql-build.sh wraps the make invocation under
+  ## CodeQL's manual build-mode tracing.
+  prepare-command: "ci/codeql-prepare.sh"
+  build-command:   "ci/codeql-build.sh"
