@@ -1,3 +1,312 @@
+commit 323f4610b6fbdd0b011aef2d2b42228046d1f0eb
+Merge: 899959ae 1c732f20
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Fri May 15 13:14:54 2026 -0400
+
+    Merge remote-tracking branch 'refs/remotes/org-ai-assisted/master'
+
+commit 1c732f20949a9e5153b42acbafd925db4853daea
+Merge: be8ca04a 91184edd
+Author: assisted-by-ai (Bot Account) <228987186+assisted-by-ai@users.noreply.github.com>
+Date:   Tue May 12 19:56:15 2026 -0400
+
+    Merge pull request #15 from org-ai-assisted/claude/review-github-actions-IQwcy
+
+    local-python-lint: drop paths filter, always run lint
+
+commit 91184edd4b6604b005e540cef3d8cb0ca9bf45a4
+Author: Claude <noreply@anthropic.com>
+Date:   Tue May 12 20:19:31 2026 +0000
+
+    local-python-lint: drop paths filter, always run lint
+
+    The 3-entry paths filter went stale - the workflow filename
+    reference and the apt cache key both still pointed at
+    '.github/workflows/lint-python.yml' from before the G-A-005
+    three-prefix rename to 'local-python-lint.yml'. Filter-going-
+    stale silently skips lint on PRs it should cover.
+
+    Drop the filter so push(master) and pull_request(master) always
+    run lint. Repo is mixed C/AppArmor/scripts but the lint job is
+    fast (10-min timeout, ~1 min real). Update the cache hashFiles()
+    to match the new workflow filename so apt cache invalidates
+    correctly when this workflow is edited.
+
+commit be8ca04a9ec12753f5ecf65fe345c7e694535e12
+Merge: fb7ad509 d6b44928
+Author: assisted-by-ai (Bot Account) <228987186+assisted-by-ai@users.noreply.github.com>
+Date:   Tue May 12 16:15:08 2026 -0400
+
+    local-dbus-fuzz: enable path-filtered pull_request trigger (#14)
+
+    local-dbus-fuzz: enable path-filtered pull_request trigger
+
+commit d6b4492893bc3032d310db54f5415a2d3cb51e63
+Author: Claude <noreply@anthropic.com>
+Date:   Tue May 12 20:07:40 2026 +0000
+
+    local-dbus-fuzz: enable path-filtered pull_request trigger
+
+    dfuzzer (D-Bus) workflow has been verified green via workflow_dispatch
+    on master. Enable the previously commented-out pull_request trigger
+    so PRs that touch the fm-shim-backend C source, its compile script,
+    the dfuzzer build/runner, or this workflow itself get fuzz coverage.
+
+    Also:
+    - fix stale workflow filename reference (.github/workflows/dfuzzer.yml
+      -> .github/workflows/local-dbus-fuzz.yml; renamed under G-A-005)
+    - add ci/dfuzzer-build.sh to the paths filter (it builds the dfuzzer
+      binary from source - changes here invalidate prior runs)
+    - rewrite the header comment that described the now-historic
+      workflow_dispatch-only state.
+
+commit fb7ad5094fa6b27125c5ea741e0596a235baa50a
+Merge: c1139823 d6fc7cff
+Author: assisted-by-ai (Bot Account) <228987186+assisted-by-ai@users.noreply.github.com>
+Date:   Tue May 12 15:28:58 2026 -0400
+
+    Merge pull request #13 from org-ai-assisted/claude/review-github-actions-IQwcy
+
+    workflow triggers: normalize pull_request to branches: [master]
+
+commit d6fc7cffb26321ff458dd3980a112448e1bbfe38
+Author: Claude <noreply@anthropic.com>
+Date:   Tue May 12 19:25:57 2026 +0000
+
+    workflow triggers: normalize pull_request to branches: [master]
+
+    Propagate dmf canonical updates for consumer-claude-code.yml and
+    consumer-codex-review.yml: bare `pull_request:` ->
+    `pull_request: branches: [master]`. Matches the byte-identical
+    canonical in
+    developer-meta-files/consumer-templates/.github/workflows/.
+
+    Practical impact: PRs targeting feature branches no longer fire
+    the AI reviews. The org's typical workflow (feature-branch ->
+    master PR) is unaffected.
+
+commit c11398236615009bdad1b039f28073a69a06a4b3
+Merge: 00b6339a 2d503860
+Author: assisted-by-ai (Bot Account) <228987186+assisted-by-ai@users.noreply.github.com>
+Date:   Tue May 12 13:48:31 2026 -0400
+
+    Merge pull request #12 from org-ai-assisted/claude/review-github-actions-IQwcy
+
+    scorecard: remove consumer-scorecard.yml (org-wide opt-out)
+
+commit 2d50386036b1db6f074604f4078bf01f1d71daff
+Author: Claude <noreply@anthropic.com>
+Date:   Tue May 12 17:46:00 2026 +0000
+
+    scorecard: remove consumer-scorecard.yml (org-wide opt-out)
+
+    Per the consumer-template architecture's opt-in-by-file-presence
+    rule, deleting a consumer-*.yml is the opt-out signal:
+    pkg_update_consumer_workflows refreshes only files that already
+    exist on the consumer side; the next propagation pass will not
+    re-create this.
+
+    Org-wide policy: Scorecard's value-to-noise ratio is low (many
+    false positives, non-actionable signals). Keeping it only in
+    derivative-maker (the canonical baseline) where the org-wide
+    supply-chain signal is most useful.
+
+    Spec:
+    https://github.com/org-ai-assisted/developer-meta-files/blob/master/agents/github-actions-consumer-templates.md
+
+commit 00b6339a01392db4e0f62143ab0fa08b9177386c
+Merge: b128c2b5 bc75ea7d
+Author: assisted-by-ai (Bot Account) <228987186+assisted-by-ai@users.noreply.github.com>
+Date:   Tue May 12 12:47:13 2026 -0400
+
+    Merge pull request #11 from org-ai-assisted/claude/review-github-actions-IQwcy
+
+    workflows: rename legacy unprefixed to consumer- prefix
+
+commit bc75ea7d6f0918e89032fa65dcc715217e0a0c5e
+Author: Claude <noreply@anthropic.com>
+Date:   Tue May 12 16:44:41 2026 +0000
+
+    workflows: align consumer-*.yml byte-identical to dmf canonicals
+
+    Follow-up to the rename commit: in addition to renaming the
+    files, content must be byte-identical to the canonical wrappers
+    in developer-meta-files/consumer-templates/.github/workflows/.
+
+    Differences absorbed by this commit:
+
+    - scorecard.yml cron slot: per-repo allocation -> uniform
+      org-wide '0 6 * * 0' (the canonical's slot).
+    - Header comments: switched to the standard "Managed by
+      pkg_update_consumer_workflows" template so contributors see
+      the propagation contract.
+
+    User-facing `name:` fields unchanged.
+
+    Spec:
+    https://github.com/org-ai-assisted/developer-meta-files/blob/master/agents/github-actions-consumer-templates.md
+
+commit 2dbf8ade8aa5491b0521a1ed693abc4bca5c7cda
+Author: Claude <noreply@anthropic.com>
+Date:   Tue May 12 16:42:53 2026 +0000
+
+    workflows: rename legacy unprefixed to consumer- prefix
+
+    Per consumer-template architecture (G-A-005, three-prefix
+    convention): wrappers around developer-meta-files reusables
+    carry the `consumer-` prefix. This is the bulk rollout of the
+    prefix to this repo's universal wrappers.
+
+    Each file is byte-identical to its corresponding canonical in
+    developer-meta-files/consumer-templates/.github/workflows/.
+
+    User-facing `name:` fields unchanged. cron slots converge on
+    the org-wide singleton (`0 6 * * 0` for Scorecard) per spec
+    "Scheduling in byte-identical templates" - GitHub queue
+    serializes; Scorecard's low value-to-noise ratio makes that
+    contention acceptable.
+
+    Spec:
+    https://github.com/org-ai-assisted/developer-meta-files/blob/master/agents/github-actions-consumer-templates.md
+
+commit b128c2b5eabcec49f6de27fa78bc95147505f674
+Merge: d9025962 1abdf11d
+Author: assisted-by-ai (Bot Account) <228987186+assisted-by-ai@users.noreply.github.com>
+Date:   Tue May 12 12:33:30 2026 -0400
+
+    Merge pull request #10 from org-ai-assisted/claude/review-github-actions-IQwcy
+
+    codeql: migrate to split consumer-codeql-{python,cpp} wrappers
+
+commit 1abdf11d05d376c716b6114b71702369f398aa53
+Author: Claude <noreply@anthropic.com>
+Date:   Tue May 12 16:19:47 2026 +0000
+
+    workflows: rename dfuzzer+lint-python to local- prefix
+
+    Per consumer-template architecture: workflows that live only in
+    one repo carry the `local-` prefix. Two renames:
+
+    - dfuzzer.yml -> local-dbus-fuzz.yml
+      (tool name -> surface name; says what's being fuzzed)
+    - lint-python.yml -> local-python-lint.yml
+      (reorder to match local-<lang>-<verb> pattern used in other
+      repos, e.g. helper-scripts local-python-checks)
+
+    User-facing `name:` fields unchanged.
+
+commit f6d6f000617268b1c7a0b81c7a859ac900af99e9
+Author: Claude <noreply@anthropic.com>
+Date:   Tue May 12 16:06:52 2026 +0000
+
+    bandit: migrate to consumer-bandit wrapper
+
+    Per dmf #69 (reusable-bandit.yml refactor to shebang-aware
+    discovery). The old bandit.yml passed
+    `with: paths: usr/lib/python3/dist-packages/fm_shim_frontend`
+    and `with: prepare-command: ci/codeql-prepare.sh` to symlink
+    genmkfile-tagged '*.py#tag' files. Both are no longer needed -
+    the reusable now discovers Python by extension OR by shebang
+    on its own.
+
+    Changes:
+
+    - Renamed: .github/workflows/bandit.yml -> consumer-bandit.yml,
+      byte-identical to dmf canonical (no `with:`).
+
+    Behavior change: bandit now scans the whole repo via shebang
+    discovery (including any Python outside
+    `usr/lib/python3/dist-packages/fm_shim_frontend`). If new false
+    positives surface, suppress per-line with `# nosec`.
+
+    ci/codeql-prepare.sh remains in the repo - it's still used by
+    codeql-python and codeql-cpp jobs (per .github/dm-consumer.yml).
+
+commit 51cd4202dd5320bcdd71a2db26eb8d5ef0273725
+Author: Claude <noreply@anthropic.com>
+Date:   Tue May 12 15:59:23 2026 +0000
+
+    codeql: migrate to split consumer-codeql-{python,cpp} wrappers
+
+    Per dmf #69 (reusable-codeql.yml hard refactor + single-job
+    per-language wrappers per design decision 3). The old
+    codeql.yml had two jobs (python + c-cpp) in one workflow; the
+    new architecture splits these into two separate workflow files.
+
+    Changes:
+
+    - Deleted: .github/workflows/codeql.yml (old multi-job).
+    - New: .github/workflows/consumer-codeql-python.yml
+      (byte-identical to dmf canonical).
+    - New: .github/workflows/consumer-codeql-cpp.yml
+      (byte-identical to dmf canonical).
+    - .github/dm-consumer.yml: add
+        codeql-python.prepare-command: "ci/codeql-prepare.sh"
+        codeql-cpp.prepare-command:    "ci/codeql-prepare.sh"
+        codeql-cpp.build-command:      "ci/codeql-build.sh"
+      (the values the old codeql.yml passed via `with:` for each
+      language job).
+
+    Behavior change: python scan and c-cpp scan now run as separate
+    Actions UI entries (CodeQL Python / CodeQL c-cpp). A failure in
+    one no longer fails the other.
+
+commit d9025962aac47ee531e26f31994ae4d98703150c
+Merge: 899959ae 83fc14a9
+Author: assisted-by-ai (Bot Account) <228987186+assisted-by-ai@users.noreply.github.com>
+Date:   Tue May 12 11:45:17 2026 -0400
+
+    Merge pull request #9 from org-ai-assisted/claude/review-github-actions-IQwcy
+
+    coverity: migrate to consumer-template architecture
+
+commit 83fc14a99ed7ea91672042d832e9363c0ae12185
+Author: Claude <noreply@anthropic.com>
+Date:   Tue May 12 15:34:15 2026 +0000
+
+    cppcheck: migrate to consumer-template architecture
+
+    Per dmf #68 (reusable-cppcheck.yml hard refactor). The old
+    cppcheck.yml wrapper passed inputs (paths, prepare-command) that
+    no longer exist on the reusable. Without this migration the
+    next cppcheck run (PR / master push) would fail because the
+    reusable's runtime config-load step would not find the cppcheck
+    section in .github/dm-consumer.yml.
+
+    Changes:
+
+    - .github/dm-consumer.yml: add cppcheck.paths +
+      cppcheck.prepare-command (the values the old wrapper passed
+      via `with:`).
+    - Renamed: .github/workflows/cppcheck.yml ->
+      consumer-cppcheck.yml, byte-identical to dmf canonical (no
+      `with:`, just the reusable call).
+
+commit 74eb7cafbd2b9aee63abd2cfcbbb507bc5c770a7
+Author: Claude <noreply@anthropic.com>
+Date:   Tue May 12 15:21:30 2026 +0000
+
+    coverity: migrate to consumer-template architecture
+
+    Per dmf #67 (reusable refactor) + #68 (deadlock hotfix):
+
+    - New: .github/dm-consumer.yml with coverity.project-name +
+      canonical-repos.
+    - Renamed: .github/workflows/coverity.yml -> consumer-coverity.yml,
+      byte-identical to dmf canonical (no `with:`, secrets-only).
+
+    Behavior change:
+
+    - Cron slot moves from '30 6 * * 0' (Sunday 06:30) to
+      '0 4 * * 5' (Friday 04:00) - the org-wide singleton slot in
+      the canonical template.
+
+commit 899959ae8831657f5af884ebba3243e5f1858707
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Mon May 11 20:28:53 2026 +0000
+
+    bumped changelog version
+
 commit 02c34b80ccf838436258991e967a026ff718850d
 Merge: 4191b49a c2fa29c0
 Author: Patrick Schleizer <adrelanos@whonix.org>
