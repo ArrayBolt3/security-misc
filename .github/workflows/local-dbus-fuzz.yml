@@ -14,9 +14,10 @@
 ## calls) that an in-process libFuzzer harness on the parser alone
 ## would not catch.
 ##
-## Trigger shape mirrors helper-scripts' fuzz.yml: workflow_dispatch
-## only initially. Once a green-baseline run lands, add path-filtered
-## pull_request and push triggers (commented out below).
+## Trigger shape mirrors helper-scripts' local-python-fuzz.yml:
+## workflow_dispatch + path-filtered pull_request. PRs that don't
+## touch the shim backend, its compile script, the dfuzzer build /
+## runner, or this workflow itself are skipped to keep cost bounded.
 ##
 ## Workflow body lives in ci/dfuzzer-run.sh (R-100); this file
 ## carries only the trigger schedule + apt install + invocation.
@@ -30,14 +31,15 @@ on:
         description: 'Per-method dfuzzer time budget (seconds)'
         required: false
         default: '60'
-  ## pull_request:
-  ##   branches: [master]
-  ##   paths:
-  ##     - 'usr/src/security-misc/fm-shim-backend.c#security-misc-shared'
-  ##     - 'usr/libexec/security-misc/compile-fm-shim-backend#security-misc-shared'
-  ##     - 'ci/dfuzzer-run.sh'
-  ##     - 'ci/codeql-prepare.sh'
-  ##     - '.github/workflows/dfuzzer.yml'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'usr/src/security-misc/fm-shim-backend.c#security-misc-shared'
+      - 'usr/libexec/security-misc/compile-fm-shim-backend#security-misc-shared'
+      - 'ci/dfuzzer-build.sh'
+      - 'ci/dfuzzer-run.sh'
+      - 'ci/codeql-prepare.sh'
+      - '.github/workflows/local-dbus-fuzz.yml'
 
 permissions:
   contents: read

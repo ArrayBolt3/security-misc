@@ -1,0 +1,40 @@
+## Copyright (C) 2026 - 2026 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
+## See the file COPYING for copying conditions.
+
+## AI-Assisted
+
+## Per-repo parameter overrides. Read at workflow runtime by the
+## reusable workflows in developer-meta-files. Top-level keys
+## mirror the consumer-template basename without the
+## 'consumer-' prefix.
+##
+## Spec:
+## https://github.com/org-ai-assisted/developer-meta-files/blob/master/agents/github-actions-consumer-templates.md
+
+coverity:
+  ## scan.coverity.com project name. The URL renders the slash as
+  ## a dash for display ('/projects/Kicksecure-security-misc') but
+  ## the API form-parameter requires the actual slash.
+  project-name:    "Kicksecure/security-misc"
+  canonical-repos: "Kicksecure/security-misc,org-ai-assisted/security-misc"
+
+cppcheck:
+  paths: "usr/src/security-misc"
+  ## genmkfile names the C sources '*.c#security-misc-shared'
+  ## (cppcheck discovers files by extension; would otherwise miss
+  ## them). The codeql-prepare.sh script symlinks them to clean
+  ## '*.c' names.
+  prepare-command: "ci/codeql-prepare.sh"
+
+codeql-python:
+  ## Same prep as cppcheck: codeql-prepare.sh symlinks
+  ## '*.py#security-misc-shared' to clean '*.py' names so the
+  ## CodeQL python extractor discovers them.
+  prepare-command: "ci/codeql-prepare.sh"
+
+codeql-cpp:
+  ## codeql-prepare.sh handles both python and c-cpp source
+  ## symlinks; codeql-build.sh wraps the make invocation under
+  ## CodeQL's manual build-mode tracing.
+  prepare-command: "ci/codeql-prepare.sh"
+  build-command:   "ci/codeql-build.sh"
