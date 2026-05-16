@@ -5,18 +5,24 @@
 
 ## AI-Assisted
 
-## Install build dependencies and build dfuzzer from upstream source.
-## Run from .github/workflows/dfuzzer.yml (R-100; no inline scripts in
-## the YAML).
+## Build dfuzzer from upstream source. Run from
+## .github/workflows/local-dbus-fuzz.yml (R-100; no inline scripts
+## in the YAML).
 ##
-## Two phases:
-##   1. apt-get install:
-##      - dfuzzer build deps (meson, ninja, glib, xsltproc, docbook)
-##      - dfuzzer runtime deps (dbus, dbus-x11)
-##      - fm-shim-backend build deps (libdbus-1-dev, libsystemd-dev,
-##        pkg-config, gcc)
-##   2. clone dfuzzer at pinned tag, meson setup + ninja, install to
-##      /usr/local/bin/dfuzzer
+## Build / runtime deps are installed by the caller workflow via
+## developer-meta-files/.github/actions/apt-install-with-cache (a
+## composite action that bundles cache + install with a
+## runner-owned .deb sidecar). The package list lives in the
+## caller workflow alongside the cache key.
+##
+## Required apt deps for this script:
+##   - meson ninja-build              # build system
+##   - xsltproc docbook-xsl           # man-page generation
+##   - libglib2.0-dev                 # dfuzzer dep
+##   - dbus dbus-x11                  # dfuzzer runtime
+##   - libdbus-1-dev libsystemd-dev pkg-config gcc   # for the
+##                                                   # fm-shim-backend
+##                                                   # build below
 ##
 ## dfuzzer is NOT packaged in Ubuntu 24.04 noble (verified via
 ## packages.ubuntu.com - 'No such package'); hence the from-source
@@ -35,18 +41,6 @@ fi
 
 DFUZZER_TAG="${DFUZZER_TAG:-v2.6}"
 
-## Phase 1: apt install. Caller workflow's actions/cache step
-## populates /var/cache/apt/archives ahead of this; apt-get install
-## then reuses the cached .debs.
-sudo --non-interactive apt-get update --error-on=any
-sudo --non-interactive apt-get install --yes --no-install-recommends \
-  meson ninja-build \
-  xsltproc docbook-xsl \
-  libglib2.0-dev \
-  dbus dbus-x11 \
-  libdbus-1-dev libsystemd-dev pkg-config gcc
-
-## Phase 2: dfuzzer build.
 ## TODO: Better to clone the whole repository, then check out a commit hash?
 git clone --depth 1 --branch "${DFUZZER_TAG}" \
   https://github.com/dbus-fuzzer/dfuzzer /tmp/dfuzzer

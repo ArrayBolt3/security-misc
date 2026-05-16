@@ -68,24 +68,18 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Prepare apt cache directory
-        run: |
-          sudo mkdir -p /var/cache/apt/archives
-          sudo chown -R "$(id -u):$(id -g)" /var/cache/apt/archives
-
-      - name: Cache apt packages
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
+      ## apt deps for dfuzzer-build.sh (build + runtime + fm-shim
+      ## backend compile). See ci/dfuzzer-build.sh header for the
+      ## per-package rationale.
+      - name: Install dfuzzer build + runtime apt deps
+        uses: org-ai-assisted/developer-meta-files/.github/actions/apt-install-with-cache@master
         with:
-          path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-dfuzzer-${{ hashFiles('.github/workflows/dfuzzer.yml', 'ci/dfuzzer-build.sh') }}
-          restore-keys: |
-            ${{ runner.os }}-apt-dfuzzer-
+          packages: 'meson ninja-build xsltproc docbook-xsl libglib2.0-dev dbus dbus-x11 libdbus-1-dev libsystemd-dev pkg-config gcc'
+          cache-key: ${{ runner.os }}-apt-dfuzzer-${{ hashFiles('.github/workflows/local-dbus-fuzz.yml', 'ci/dfuzzer-build.sh') }}
 
-      - name: Install build deps + build dfuzzer from source
-        ## Apt install + dfuzzer compile lives in ci/dfuzzer-build.sh
-        ## (R-100 - no inline scripts in YAML). dfuzzer is NOT
-        ## packaged in Ubuntu 24.04 noble, hence the from-source
-        ## build pinned to upstream v2.6.
+      - name: Build dfuzzer from source
+        ## dfuzzer is not packaged for Ubuntu 24.04; build from
+        ## pinned upstream tag. See ci/dfuzzer-build.sh.
         run: ci/dfuzzer-build.sh
 
       - name: Prepare extension-clean source paths
