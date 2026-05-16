@@ -64,29 +64,14 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Prepare apt cache directory
-        run: |
-          sudo mkdir -p /var/cache/apt/archives
-          sudo chown -R "$(id -u):$(id -g)" /var/cache/apt/archives
-
-      - name: Cache apt packages
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
-        with:
-          path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-lint-python-${{ hashFiles('.github/workflows/local-python-lint.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-apt-lint-python-
-
+      ## python3-pyqt5 + python3-pyqt5.sip are runtime deps of
+      ## fm_shim_frontend; pytest + hypothesis are needed for the
+      ## property-test suite added in 2026-05.
       - name: Install flake8 + Hypothesis test deps
-        ## python3-pyqt5 + python3-pyqt5.sip are runtime deps of
-        ## fm_shim_frontend; pytest + hypothesis are needed for the
-        ## property-test suite added in 2026-05.
-        run: |
-          sudo --non-interactive apt-get update --error-on=any
-          sudo --non-interactive apt-get install --yes --no-install-recommends \
-            flake8 \
-            python3-pytest python3-hypothesis \
-            python3-pyqt5 python3-pyqt5.sip
+        uses: org-ai-assisted/developer-meta-files/.github/actions/apt-install-with-cache@master
+        with:
+          packages: 'flake8 python3-pytest python3-hypothesis python3-pyqt5 python3-pyqt5.sip'
+          cache-key: ${{ runner.os }}-apt-lint-python-${{ hashFiles('.github/workflows/local-python-lint.yml') }}
 
       - name: Prepare extension-clean Python source paths
         run: ci/codeql-prepare.sh
