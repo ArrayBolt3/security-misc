@@ -64,14 +64,19 @@ jobs:
         with:
           persist-credentials: false
 
-      ## python3-pyqt5 + python3-pyqt5.sip are runtime deps of
-      ## fm_shim_frontend; pytest + hypothesis are needed for the
-      ## property-test suite added in 2026-05.
-      - name: Install flake8 + Hypothesis test deps
-        uses: org-ai-assisted/developer-meta-files/.github/actions/apt-install-with-cache@master
+      ## install-deps composite action installs apt deps + genmkfile
+      ## + helper-scripts. helper-scripts provides the stdisplay
+      ## Python module that fm_shim_frontend imports at module top
+      ## level; with the real package present we run the tests
+      ## against production modules instead of conftest.py stubs.
+      ##
+      ## python3-pyqt5 + python3-pyqt5.sip: runtime deps of
+      ## fm_shim_frontend's Qt UI; flake8 / python3-pytest /
+      ## python3-hypothesis: the lint + property-test toolchain.
+      - name: Install apt deps + genmkfile + helper-scripts
+        uses: org-ai-assisted/developer-meta-files/.github/actions/install-deps@master
         with:
-          packages: 'flake8 python3-pytest python3-hypothesis python3-pyqt5 python3-pyqt5.sip'
-          cache-key: ${{ runner.os }}-apt-lint-python-${{ hashFiles('.github/workflows/local-python-lint.yml') }}
+          apt-packages: 'flake8 python3-pytest python3-hypothesis python3-pyqt5 python3-pyqt5.sip'
 
       - name: Prepare extension-clean Python source paths
         run: ci/codeql-prepare.sh

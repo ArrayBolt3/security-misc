@@ -68,14 +68,14 @@ jobs:
         with:
           persist-credentials: false
 
-      ## apt deps for dfuzzer-build.sh (build + runtime + fm-shim
-      ## backend compile). See ci/dfuzzer-build.sh header for the
-      ## per-package rationale.
-      - name: Install dfuzzer build + runtime apt deps
-        uses: org-ai-assisted/developer-meta-files/.github/actions/apt-install-with-cache@master
+      ## install-deps composite action: apt deps for dfuzzer-build.sh
+      ## (build + runtime + fm-shim backend compile) plus genmkfile +
+      ## helper-scripts (org-standard install path; see
+      ## ci/dfuzzer-build.sh header for per-package rationale).
+      - name: Install apt deps + genmkfile + helper-scripts
+        uses: org-ai-assisted/developer-meta-files/.github/actions/install-deps@master
         with:
-          packages: 'meson ninja-build xsltproc docbook-xsl libglib2.0-dev dbus dbus-x11 libdbus-1-dev libsystemd-dev pkg-config gcc'
-          cache-key: ${{ runner.os }}-apt-dfuzzer-${{ hashFiles('.github/workflows/local-dbus-fuzz.yml', 'ci/dfuzzer-build.sh') }}
+          apt-packages: 'meson ninja-build xsltproc docbook-xsl libglib2.0-dev dbus dbus-x11 libdbus-1-dev libsystemd-dev pkg-config gcc'
 
       - name: Build dfuzzer from source
         ## dfuzzer is not packaged for Ubuntu 24.04; build from
