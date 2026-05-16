@@ -10,10 +10,9 @@
 ## in the YAML).
 ##
 ## Build / runtime deps are installed by the caller workflow via
-## developer-meta-files/.github/actions/apt-install-with-cache (a
-## composite action that bundles cache + install with a
-## runner-owned .deb sidecar). The package list lives in the
-## caller workflow alongside the cache key.
+## developer-meta-files/.github/actions/install-deps (genmkfile +
+## helper-scripts + apt packages); the apt list lives in the
+## caller workflow.
 ##
 ## Required apt deps for this script:
 ##   - meson ninja-build              # build system
