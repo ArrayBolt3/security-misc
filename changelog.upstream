@@ -1,3 +1,186 @@
+commit a93dca3366d99a5088ca9f03080be2c016c2d5bc
+Merge: 8da4e1ef 8276e4e2
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Sun May 17 16:22:55 2026 -0400
+
+    Merge remote-tracking branch 'refs/remotes/org-ai-assisted/master'
+
+commit 8276e4e2238fb6c8770189f20cbc9aee22e67c87
+Merge: 8da4e1ef 9ebe7128
+Author: assisted-by-ai (Bot Account) <228987186+assisted-by-ai@users.noreply.github.com>
+Date:   Sun May 17 14:02:54 2026 -0400
+
+    Merge pull request #18 from org-ai-assisted/claude/fix-dependabot-action-UnL7w
+
+    dependabot.yml: drop docker block (sync to new canonical)
+
+commit 9ebe71282f7b4394e87e6db45f7f9219cd322007
+Author: Claude <noreply@anthropic.com>
+Date:   Sun May 17 17:59:44 2026 +0000
+
+    trim file commentary
+
+commit c67f2ea60336a6819b4724836cec426f12b7f5ed
+Author: Claude <noreply@anthropic.com>
+Date:   Sun May 17 17:43:21 2026 +0000
+
+    dependabot.yml: drop docker block (sync to new canonical)
+
+    The previous canonical at
+    developer-meta-files/consumer-templates/.github/dependabot.yml
+    carried a docker package-ecosystem block on the documented theory
+    that the block was a "harmless no-op" in repos without a
+    /Dockerfile. That theory was wrong: the dependabot-action errors
+    with `dependency_file_not_found` and aborts the whole job -
+    including the github-actions ecosystem run that shares it - so
+    this repo lost its github-actions Dependabot coverage too.
+
+    Sync to the new canonical, which carries github-actions only.
+
+    See org-ai-assisted/developer-meta-files PR #105 for the
+    canonical change and the docker-bearing-repo opt-out mechanism.
+
+commit 8da4e1ef7b5e1dd3c217d9ae59c3d56ab6b052da
+Merge: 2b3e644c 493de5e4
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Sat May 16 17:15:01 2026 -0400
+
+    Merge remote-tracking branch 'refs/remotes/org-ai-assisted/master'
+
+commit 493de5e4741a5cf6f1adb20a6c9354760b208678
+Merge: 2b3e644c 6627cff0
+Author: assisted-by-ai (Bot Account) <228987186+assisted-by-ai@users.noreply.github.com>
+Date:   Sat May 16 16:03:37 2026 -0400
+
+    Merge pull request #17 from org-ai-assisted/claude/security-misc-real-stdisplay-pyqt-and-install-deps
+
+    ci: real stdisplay + PyQt5 + install-deps composite action; drop conftest stubs
+
+commit 6627cff0563b4f17b49e36bd5dc768e9de0f69ab
+Author: assisted-by-ai (Bot Account) <228987186+assisted-by-ai@users.noreply.github.com>
+Date:   Sat May 16 13:54:45 2026 -0400
+
+    ci: real stdisplay + PyQt5 + install-deps composite action; drop conftest stubs
+
+    ci/tests/fm_shim_frontend/conftest.py stubbed two heavy module-level
+    imports in fm_shim_frontend.fm_shim_frontend to let the property
+    tests import the URI-validation function without bringing up Qt or
+    installing the helper-scripts Debian package:
+
+      - stdisplay (helper-scripts Debian package) - identity stub
+      - PyQt5.{QtCore,QtGui,QtWidgets,sip} - fake module whose
+        __getattr__ synthesizes a fresh type() per name
+
+    The file already carried a TODO to remove both: "We can install
+    helper-scripts before running the tests to get stdisplay, and as
+    long as the test code paths don't call QApplication(), the crash
+    during test issue should be avoidable."
+
+    This commit does that:
+
+      - local-python-lint.yml switches from apt-install-with-cache to
+        the developer-meta-files install-deps composite action, which
+        installs apt deps + genmkfile + helper-scripts (the latter
+        provides stdisplay). PyQt5 was already in the apt list
+        (python3-pyqt5 + python3-pyqt5.sip), so the real Qt classes
+        are available now too.
+
+      - conftest.py is deleted. Property tests now run against the
+        production modules end-to-end (the QApplication() call only
+        fires inside fm_shim_frontend's main(), which the test never
+        invokes - it imports get_path_list_from_uris directly).
+
+      - local-dbus-fuzz.yml also switches to install-deps for
+        consistency (same composite-action pattern); ci/dfuzzer-build.sh
+        header comment updated to point at install-deps instead of
+        apt-install-with-cache.
+
+    Same shape as the recent msgcollector simplification (PR #21):
+    let install-deps handle apt + genmkfile + helper-scripts in one
+    step.
+
+commit 2b3e644c750962592ad87d0c95cdd7bdd8ecbb77
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Sat May 16 06:08:34 2026 -0400
+
+    add .github/dependabot.yml
+
+commit 86ef7582223b9a3a622bc1b9dd5bedc576776c89
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Sat May 16 06:01:50 2026 -0400
+
+    update .github/workflows/consumer-bandit.yml
+
+commit 873ba695c7e74bcef4efbc93a13557adfd01d658
+Merge: 79a9fb9b a4465cd7
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Sat May 16 05:27:53 2026 -0400
+
+    Merge remote-tracking branch 'refs/remotes/org-ai-assisted/master'
+
+commit a4465cd76fc9c05cb75b7d4f4c8ba0cbbcb6a7c6
+Merge: 79a9fb9b e0ed0b33
+Author: assisted-by-ai (Bot Account) <228987186+assisted-by-ai@users.noreply.github.com>
+Date:   Sat May 16 04:42:50 2026 -0400
+
+    Merge pull request #16 from org-ai-assisted/claude/fix-cppcheck-tar-error-0qNYv
+
+    ci: use apt-install-with-cache composite action; drop broad restore-keys
+
+commit e0ed0b331aa8bd983fd0ec6624a6bf4481223682
+Author: assisted-by-ai (Bot Account) <228987186+assisted-by-ai@users.noreply.github.com>
+Date:   Fri May 15 20:02:27 2026 -0400
+
+    ci: use apt-install-with-cache composite action; drop broad restore-keys
+
+    Both local-dbus-fuzz.yml and local-python-lint.yml used
+    `path: /var/cache/apt/archives` with `sudo chown -R` on the system
+    dir + a broad `restore-keys:` prefix. Three problems:
+
+    1. Same `tar: partial/: Permission denied` cache-save warning as
+       the developer-meta-files reusables (apt\'s _apt:root 0700
+       partial/ subdir is unreadable by the runner; chown doesn\'t
+       help because apt-get install recreates partial/ 0700 every
+       run).
+
+    2. `restore-keys:` violates agents/github-actions.md G-A-007
+       ("no broad restore-keys, no pull_request_target + cache" -
+       cache-poisoning risk). The cache-key already includes
+       hashFiles() so a config change naturally invalidates;
+       restore-keys would defeat that.
+
+    3. Duplicated `Prepare apt cache directory` + `Cache apt packages`
+       YAML across two workflows.
+
+    Fix: replace those steps with one composite-action call:
+
+      - uses: org-ai-assisted/developer-meta-files/.github/actions/apt-install-with-cache@master
+        with:
+          packages: \'<deps>\'
+          cache-key: ${{ runner.os }}-apt-<tag>-${{ hashFiles(...) }}
+
+    The composite action caches `~/.apt-deb-cache` (runner-owned, no
+    system-dir permission gymnastics) and sudo-copies .debs in/out of
+    /var/cache/apt/archives around apt-get install. apt\'s normal
+    permission model is preserved.
+
+    local-dbus-fuzz.yml additionally:
+
+      - ci/dfuzzer-build.sh is refactored to drop its `Phase 1` apt
+        install. The package list moves into the workflow (passed to
+        the composite action), where it lives alongside the cache key
+        that invalidates on changes. dfuzzer-build.sh now only
+        does the `Phase 2` build from upstream source.
+
+    Depends on org-ai-assisted/developer-meta-files#92 (which adds
+    the composite action). This PR\'s CI will pass once #92 merges.
+
+commit 79a9fb9b7b9640e5a56f798ca3c4057ce8e4accb
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Fri May 15 18:40:53 2026 +0000
+
+    bumped changelog version
+
 commit 323f4610b6fbdd0b011aef2d2b42228046d1f0eb
 Merge: 899959ae 1c732f20
 Author: Patrick Schleizer <adrelanos@whonix.org>
