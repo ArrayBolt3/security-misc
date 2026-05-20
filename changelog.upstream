@@ -1,3 +1,9 @@
+commit f4d078d00a6e5c34a8c1e066ebd381604e8c0986
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Mon May 18 10:14:14 2026 +0000
+
+    bumped changelog version
+
 commit a93dca3366d99a5088ca9f03080be2c016c2d5bc
 Merge: 8da4e1ef 8276e4e2
 Author: Patrick Schleizer <adrelanos@whonix.org>
@@ -4473,14 +4479,14 @@ Date:   Tue May 20 21:34:03 2025 -0600
     Before patch:
     $ sudo hyperfine -- './permission-hardener enable'
     Benchmark 1: ./permission-hardener enable
-      Time (mean ± σ):     11.906 s ±  0.974 s    [User: 3.639 s, System: 8.728 s]
-      Range (min … max):   10.430 s … 14.090 s    10 runs
+      Time (mean _ _):     11.906 s _  0.974 s    [User: 3.639 s, System: 8.728 s]
+      Range (min _ max):   10.430 s _ 14.090 s    10 runs
 
     After patch:
     $ sudo hyperfine -- './permission-hardener enable'
     Benchmark 1: ./permission-hardener enable
-      Time (mean ± σ):     802.8 ms ± 178.5 ms    [User: 283.0 ms, System: 471.9 ms]
-      Range (min … max):   639.4 ms … 1092.3 ms    10 runs
+      Time (mean _ _):     802.8 ms _ 178.5 ms    [User: 283.0 ms, System: 471.9 ms]
+      Range (min _ max):   639.4 ms _ 1092.3 ms    10 runs
 
 commit 7a079c3de8bd8b4e026a1bd1b932a04610a1e386
 Author: Ashlen <dev@anthes.is>
@@ -12772,7 +12778,7 @@ Date:   Wed Jul 13 07:24:12 2022 -0400
 
     Merge pull request #110 from raja-grewal/master
 
-    Incorporated Ubuntu’s kernel module blacklists and more verbose errors
+    Incorporated Ubuntu_s kernel module blacklists and more verbose errors
 
 commit 4e93b4d37e4c6d23a0ac76ddb2144c6504a66ad1
 Author: Raja Grewal <rg_public@proton.me>
@@ -12858,7 +12864,7 @@ commit 61ef9bd59f9ff39c140f782ff5b41d0a3c6d97bc
 Author: Raja Grewal <rg_public@proton.me>
 Date:   Sun Jul 10 04:52:00 2022 +1000
 
-    Incorporated Ubuntu’s kernel module blacklists
+    Incorporated Ubuntu_s kernel module blacklists
 
 commit 6aa9a9472f10d4d6270dd59fbcd94d9001aca9e6
 Author: Patrick Schleizer <adrelanos@whonix.org>
@@ -20190,13 +20196,13 @@ Date:   Sun Jul 21 12:40:37 2019 +0000
     Fix files
 
 commit 077899c23d518416cd9ee801a3607585d3a51aab
-Author: Frédéric Pierret (fepitre) <frederic.pierret@qubes-os.org>
+Author: Fr_d_ric Pierret (fepitre) <frederic.pierret@qubes-os.org>
 Date:   Sun Jul 21 11:23:06 2019 +0200
 
     Add .gitignore
 
 commit 5fbe7537613a2034d80983e095cdd8d2971b1bcc
-Author: Frédéric Pierret (fepitre) <frederic.pierret@qubes-os.org>
+Author: Fr_d_ric Pierret (fepitre) <frederic.pierret@qubes-os.org>
 Date:   Sun Jul 21 11:19:35 2019 +0200
 
     spec: update %files section
@@ -21466,7 +21472,7 @@ Date:   Thu Jun 20 23:54:58 2019 -0400
     qubes-builder integration
 
 commit 2e81885f691201e2229dadfd5ec7b554980ac689
-Author: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+Author: Marek Marczykowski-G_recki <marmarek@invisiblethingslab.com>
 Date:   Fri Jun 21 04:52:01 2019 +0200
 
     Add rpm packaging
@@ -21474,7 +21480,7 @@ Date:   Fri Jun 21 04:52:01 2019 +0200
     QubesOS/qubes-issues#1885
 
 commit 27e68a39fe005a58cac02336fc6c468a4b2f5d31
-Author: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+Author: Marek Marczykowski-G_recki <marmarek@invisiblethingslab.com>
 Date:   Fri Jun 21 04:51:33 2019 +0200
 
     Add Makefile.builder for qubes-builder (Debian)
