@@ -684,6 +684,7 @@ void hw_monitor(int argc, char **argv) {
     }
 
     if (!bitset_get(key_flags, EV_KEY)) {
+      close(tmp_fd);
       continue;
     }
 
@@ -708,6 +709,7 @@ void hw_monitor(int argc, char **argv) {
       }
     }
     if (!supports_panic) {
+      close(tmp_fd);
       continue;
     }
 
