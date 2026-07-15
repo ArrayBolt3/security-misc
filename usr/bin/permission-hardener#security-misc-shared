@@ -280,7 +280,7 @@ check_nosuid_whitelist() {
   ## literal matching is intentional here too
   [[ " ${policy_exact_white_list[*]} " =~ " ${target_file} " ]] && return 1
 
-  for match_white_list_entry in "${policy_match_white_list[@]:-}"; do
+  for match_white_list_entry in ${policy_match_white_list[@]+"${policy_match_white_list[@]}"}; do
     if [[ "${target_file}" == *"${match_white_list_entry}"* ]]; then
       return 1
     fi
