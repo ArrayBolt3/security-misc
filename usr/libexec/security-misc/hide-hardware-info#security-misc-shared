@@ -48,7 +48,7 @@ create_whitelist() {
     exit 1
   fi
 
-  if grep -q "${1}" /etc/group; then
+  if getent group "${1}" >/dev/null; then
     ## Changing the permissions of /sys recursively
     ## causes errors as the permissions of /sys/kernel/debug
     ## and /sys/fs/cgroup cannot be changed.
