@@ -1011,7 +1011,7 @@ void fifo_monitor(char **argv) {
 
   /* Swallow all signals that we can. */
   sigact_swallow.sa_handler = SIG_IGN;
-  for (sig_idx = 1; sig_idx < max_sig_num; sig_idx++) {
+  for (sig_idx = 1; sig_idx <= max_sig_num; sig_idx++) {
     if (sig_idx == SIGSTOP) {
       continue;
     }
