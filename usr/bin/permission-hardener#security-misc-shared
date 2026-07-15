@@ -188,7 +188,11 @@ File name: '${file_name}'
 File name from stat: '${file_name_from_stat}'
 line: '${processed_config_line}'
 " >&2
-      return 1
+      existing_mode=''
+      existing_owner=''
+      existing_group=''
+      file_name_from_stat=''
+      return 0
     fi
   fi
 
