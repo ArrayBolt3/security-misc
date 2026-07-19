@@ -106,7 +106,6 @@ usr/lib/systemd/system/usbguard.service.d/30_security-misc.conf#security-misc-sh
 usr/lib/systemd/system/user@.service.d/sysfs.conf#security-misc-shared => /usr/lib/systemd/system/user@.service.d/sysfs.conf
 usr/lib/systemd/user/fm-shim.service#security-misc-shared => /usr/lib/systemd/user/fm-shim.service
 usr/lib/systemd/user/usbguard-notifier.service.d/30_security-misc.conf#security-misc-shared => /usr/lib/systemd/user/usbguard-notifier.service.d/30_security-misc.conf
-usr/lib/udev/rules.d/70-udisks-ignore-optical.rules#security-misc-shared => /usr/lib/udev/rules.d/70-udisks-ignore-optical.rules
 usr/lib/udev/rules.d/95-emerg-shutdown.rules#security-misc-shared => /usr/lib/udev/rules.d/95-emerg-shutdown.rules
 usr/libexec/security-misc/askpass#security-misc-shared => /usr/libexec/security-misc/askpass
 usr/libexec/security-misc/block-unsafe-logins#security-misc-shared => /usr/libexec/security-misc/block-unsafe-logins
