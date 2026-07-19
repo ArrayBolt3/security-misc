@@ -489,7 +489,7 @@ void ignore_signals(bool also_sigterm) {
 
   /* Swallow all signals that we can. */
   sigact_swallow.sa_handler = SIG_IGN;
-  for (sig_idx = 1; sig_idx < max_sig_num; sig_idx++) {
+  for (sig_idx = 1; sig_idx <= max_sig_num; sig_idx++) {
     if (sig_idx == SIGSTOP) {
       continue;
     }
@@ -719,6 +719,7 @@ void hw_monitor(int argc, char **argv) {
     }
 
     if (!bitset_get(key_flags, EV_KEY)) {
+      close(tmp_fd);
       continue;
     }
 
@@ -743,6 +744,7 @@ void hw_monitor(int argc, char **argv) {
       }
     }
     if (!supports_panic) {
+      close(tmp_fd);
       continue;
     }
 
