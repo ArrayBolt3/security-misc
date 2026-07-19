@@ -886,7 +886,7 @@ print_fs_audit() {
 
     output_stat "${state_file_item}"
     if [ -z "${file_name_from_stat}" ]; then
-      echo "... '${state_file_item}' does not exist"
+      echo "... '${state_file_item}' does not exist or has multiple hardlinks"
       continue
     fi
 
