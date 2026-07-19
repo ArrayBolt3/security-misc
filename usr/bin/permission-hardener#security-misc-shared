@@ -182,12 +182,7 @@ line: '${processed_config_line}'
   ## directory hardlinks since directories can't have traditional hardlinks.
   if [ ! -d "${file_name_from_stat}" ]; then
     if (( hardlink_count > 1 )); then
-      log error "\
-File has unexpected hardlinks, cannot handle.
-File name: '${file_name}'
-File name from stat: '${file_name_from_stat}'
-line: '${processed_config_line}'
-" >&2
+      log info "File has unexpected hardlinks, cannot handle. file_name: '${file_name}'" >&2
       existing_mode=''
       existing_owner=''
       existing_group=''
