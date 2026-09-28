@@ -1,0 +1,41 @@
+## Copyright (C) 2026 - 2026 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
+## See the file COPYING for copying conditions.
+
+## AI-Assisted
+
+## Hard-gating scan of the live production SSH servers (kicksecure.com,
+## whonix.org) against security-misc's shipped ssh-audit server policy, via the
+## dist-ai --e2e suite security-misc-tests-e2e (which lives in
+## org-ai-assisted/dist-ai, not in-tree). This is NOT the managed
+## consumer-dist-ai-tests.yml (--core) template.
+##
+## It runs on push to master, on a daily schedule, and on demand -- NOT on
+## every pull request: a feature PR cannot change the production servers, so
+## gating unrelated PRs on live external state would only wedge them. A failure
+## here means a production server dropped (or never had) the security-misc SSH
+## hardening; fix is on the host.
+##
+## Reusable docs:
+## https://github.com/org-ai-assisted/developer-meta-files/blob/master/.github/workflows/reusable-dist-ai-tests.yml
+
+name: dist-ai ssh prod
+
+on:
+  push:
+    branches: [master]
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dist-ai-ssh-prod:
+    uses: org-ai-assisted/developer-meta-files/.github/workflows/reusable-dist-ai-tests.yml@master
+    with:
+      categories: '--e2e'

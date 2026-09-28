@@ -37,3 +37,8 @@ codeql-cpp:
   ## CodeQL's manual build-mode tracing.
   prepare-command: "ci/codeql-prepare.sh"
   build-command:   "ci/codeql-build.sh"
+
+dist-ai-tests:
+  ## The ssh-audit config suite (security-misc-tests) stands up a
+  ## throwaway sshd and drives ssh-audit; python3-pytest is baseline.
+  apt-packages: "openssh-server openssh-client ssh-audit"

@@ -12,15 +12,23 @@
 MaxAuthTries 3
 
 ## Require strong ciphers and algorithms.
+##
+## Post-quantum-ONLY key exchange (no classical curve25519) and an AEAD,
+## Terrapin-immune cipher (aes256-gcm, no chacha20). This is the A+ / 100-of-100
+## sshaudit.com server profile: it resists harvest-now-decrypt-later, and
+## removes the residual Terrapin (CVE-2023-48795) exposure that chacha20 leaves
+## for unpatched peers.
+##
+## Interop note: this REQUIRES a post-quantum-capable peer -- OpenSSH 9.0+
+## (sntrup761) or 9.9+ (mlkem). Pre-9.0 / non-post-quantum clients cannot
+## connect to this server. The client config (ssh_config.d) stays broad so
+## outbound SSH to older servers still works.
 HostKey /etc/ssh/ssh_host_ed25519_key
 HostKeyAlgorithms ssh-ed25519
 PubkeyAcceptedAlgorithms ssh-ed25519,sk-ssh-ed25519@openssh.com
-Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com
+Ciphers aes256-gcm@openssh.com
 MACs umac-128-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com
-KexAlgorithms sntrup761x25519-sha512,sntrup761x25519-sha512@openssh.com,mlkem768x25519-sha256,curve25519-sha256,curve25519-sha256@libssh.org
-## To force the use of quantum-resistant key exchange algorithms, override the
-## above with
-# KexAlgorithms sntrup761x25519-sha512,sntrup761x25519-sha512@openssh.com,mlkem768x25519-sha256
+KexAlgorithms sntrup761x25519-sha512,sntrup761x25519-sha512@openssh.com,mlkem768x25519-sha256
 
 ## Override with 'no' to fully deny root login, or leave this as
 ## 'prohibit-password' for denying root password login but still allowing
