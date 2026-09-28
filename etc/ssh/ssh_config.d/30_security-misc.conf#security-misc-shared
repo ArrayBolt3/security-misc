@@ -1,11 +1,11 @@
 ## Copyright (C) 2025 - 2025 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
 ## See the file COPYING for copying conditions.
 
-## Don't edit this file, to overwrite any options, edit a file with a higher
-## number that is read later by SSH, such as
-## '/etc/ssh/ssh_config.d/50_user.conf'. If your configuration changes do not
-## need to be system-wide, you may also consider placing overrides in
-## ~/.ssh/config.
+## Don't edit this file. OpenSSH uses the FIRST value it obtains for each option.
+## To override an option per-user, use '~/.ssh/config' (read before the system
+## configuration). To override system-wide, use a drop-in with a LOWER number
+## than this one, such as '/etc/ssh/ssh_config.d/20_user.conf' (drop-ins are read
+## in lexical order).
 
 ## See also:
 ## https://www.kicksecure.com/wiki/SSH#Client_Configuration_File
@@ -14,8 +14,8 @@ Host *
   ## Strictest posture, matching the server: post-quantum-only key exchange and
   ## the aes256-gcm cipher only. Outbound SSH therefore only succeeds to a
   ## post-quantum-capable server; to reach a server that offers a narrower
-  ## algorithm set, override per-host in '~/.ssh/config' or in a higher-numbered
-  ## '/etc/ssh/ssh_config.d/50_user.conf' drop-in.
+  ## algorithm set, override per-host in '~/.ssh/config' (SSH reads it before the
+  ## system configuration, so its value wins).
   VisualHostKey yes
   Ciphers aes256-gcm@openssh.com
   MACs umac-128-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com

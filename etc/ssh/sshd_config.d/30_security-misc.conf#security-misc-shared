@@ -1,9 +1,10 @@
 ## Copyright (C) 2025 - 2025 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
 ## See the file COPYING for copying conditions.
 
-## Don't edit this file, to overwrite any options, edit a file with a higher
-## number that is read later by SSHD, such as
-## '/etc/ssh/sshd_config.d/50_user.conf'.
+## Don't edit this file. OpenSSH uses the FIRST value it obtains for each option
+## and reads drop-ins in lexical order, so to override an option use a drop-in
+## with a LOWER number than this one, such as
+## '/etc/ssh/sshd_config.d/20_user.conf'.
 
 ## See also:
 ## https://www.kicksecure.com/wiki/SSH#Server_Configuration_File
@@ -13,16 +14,12 @@ MaxAuthTries 3
 
 ## Require strong ciphers and algorithms.
 ##
-## Post-quantum-ONLY key exchange (no classical curve25519) and an AEAD,
-## Terrapin-immune cipher (aes256-gcm, no chacha20). This is the A+ / 100-of-100
-## sshaudit.com server profile: it resists harvest-now-decrypt-later, and
-## removes the residual Terrapin (CVE-2023-48795) exposure that chacha20 leaves
-## for unpatched peers.
+## Post-quantum-ONLY key exchange (no classical curve25519) and an AEAD-only
+## cipher (aes256-gcm, no chacha20). Resists harvest-now-decrypt-later capture.
 ##
-## Interop note: this REQUIRES a post-quantum-capable peer -- OpenSSH 9.0+
-## (sntrup761) or 9.9+ (mlkem). Pre-9.0 / non-post-quantum clients cannot
-## connect to this server. The client config (ssh_config.d) stays broad so
-## outbound SSH to older servers still works.
+## Interop note: this REQUIRES a post-quantum-capable peer; a client without
+## post-quantum key exchange cannot connect. The client config (ssh_config.d) is
+## equally strict.
 HostKey /etc/ssh/ssh_host_ed25519_key
 HostKeyAlgorithms ssh-ed25519
 PubkeyAcceptedAlgorithms ssh-ed25519,sk-ssh-ed25519@openssh.com
