@@ -1,3 +1,154 @@
+commit 7f60beb8bffa344453bd6794f92ff72b6098edf3
+Merge: d80e26de cbba86cb
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Wed Sep 30 04:20:30 2026 -0400
+
+    Merge remote-tracking branch 'refs/remotes/ArrayBolt3/arraybolt3/trixie'
+
+commit cbba86cb06d7acd46aaf780f9cd1e5ab4ac97d8d
+Author: Aaron Rainbolt <arraybolt3@gmail.com>
+Date:   Tue Sep 29 22:57:46 2026 -0400
+
+    Polish, reintroduce removed ciphers again but keep the requirement to use post-quantum key exchange
+
+commit 5202e7564b9133ae267c6064c88e69d23d45cd87
+Merge: d80e26de c3b4e219
+Author: Aaron Rainbolt <arraybolt3@gmail.com>
+Date:   Tue Sep 29 22:33:57 2026 -0400
+
+    Merge branch 'ai' into arraybolt3/trixie
+
+commit c3b4e219acaf5b853c8a3d71f32360ae5db3aa32
+Merge: 96c0366c d217e28d
+Author: assisted-by-ai <assisted-by-ai@users.noreply.github.com>
+Date:   Tue Sep 29 04:28:20 2026 -0400
+
+    Merge arraybolt3/trixie into ai (remaster)
+
+commit d80e26defda7271a513cb6ba8ddee7c3e9ae83cf
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Tue Sep 29 08:08:57 2026 +0000
+
+    bumped changelog version
+
+commit 96c0366cdc53005b5a06104d6c9c325c12c87882
+Author: claude (dev706 06a4d27a-451a-4444-b924-ffce1da248b5) <noreply@anthropic.com>
+Date:   Mon Sep 28 02:58:45 2026 -0400
+
+    ssh: fix override advice; sync interop comments
+
+    - OpenSSH is first-wins: a lower-numbered drop-in (or ~/.ssh/config) overrides, not a higher-numbered one
+
+    - server comment no longer claims the client stays broad; the client config is equally strict
+
+    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
+commit aba02ec3634c006ea993c4609cf9a31c2e65a2b4
+Merge: 9cb4efa8 d217e28d
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Mon Sep 28 02:40:50 2026 -0400
+
+    Merge remote-tracking branch 'refs/remotes/ArrayBolt3/arraybolt3/trixie'
+
+commit 802205a4b8e9519ebd04eda34f5428ec8719ed59
+Author: claude (dev706 06a4d27a-451a-4444-b924-ffce1da248b5) <noreply@anthropic.com>
+Date:   Mon Sep 28 01:19:07 2026 -0400
+
+    ssh client: post-quantum-only kex + aes256-gcm (match server)
+
+    - The client default now uses the same strictest set as the server: PQ-only
+      key exchange and the aes256-gcm cipher only (drop curve25519, chacha20,
+      aes256-ctr). Outbound SSH therefore only reaches post-quantum-capable
+      servers; override per-host in ~/.ssh/config or a 50_user.conf drop-in for a
+      server with a narrower algorithm set.
+
+    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
+commit d217e28daaaa3ef05d3f489180ec920eb2a4e18a
+Author: Aaron Rainbolt <arraybolt3@gmail.com>
+Date:   Sun Sep 27 21:11:28 2026 -0400
+
+    Undo dangerous SSH settings changes applied by AI
+
+commit 6cee7b5659c60bd6e2f995786c178cb575f8c980
+Merge: 9cb4efa8 0a35d857
+Author: Aaron Rainbolt <arraybolt3@gmail.com>
+Date:   Sun Sep 27 20:49:32 2026 -0400
+
+    Merge branch 'ai' into arraybolt3/trixie
+
+commit 0a35d857cf38f02e99389bbfc0e299619b4105da
+Author: claude (dev706 06a4d27a-451a-4444-b924-ffce1da248b5) <noreply@anthropic.com>
+Date:   Sun Sep 27 08:22:31 2026 -0400
+
+    sshd: post-quantum-only kex + aes256-gcm (sshaudit.com A+/100)
+
+    - Server default now offers PQ-only key exchange (drop classical curve25519)
+      and an AEAD, Terrapin-immune cipher (aes256-gcm, drop chacha20). This is the
+      A+ / 100-of-100 sshaudit.com profile (verified equivalent to grapheneos.org):
+      resists harvest-now-decrypt-later and removes chacha20's residual Terrapin
+      exposure for unpatched peers.
+    - Interop: requires an OpenSSH 9.0+ (post-quantum) peer. Client config stays
+      broad so outbound SSH to older servers is unaffected.
+
+    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
+commit fcbf940c25f57af3ddf2ec8dda1e2f8e95847bda
+Author: claude (dev706 06a4d27a-451a-4444-b924-ffce1da248b5) <noreply@anthropic.com>
+Date:   Sun Sep 27 04:21:49 2026 -0400
+
+    Move ssh-audit test tool + policies out to dist-ai
+
+    - The ssh-audit-test driver and the server/client ssh-audit policies are test
+      artifacts, not runtime hardening; they now live in the dist-ai
+      security-misc-tests suite. security-misc's shipped package stays lean.
+    - Kept here: only the CI wiring (dm-consumer.yml + the dist-ai-tests /
+      ssh-prod workflows), which is inherently per-consumer-repo. The dist-ai
+      drift-guard test keeps the moved policies in sync with the ssh config drop-ins
+      that remain the source of truth.
+
+    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
+commit 6d70b404e1812ade14912840263bf4671890dcc6
+Author: claude (dev706 06a4d27a-451a-4444-b924-ffce1da248b5) <noreply@anthropic.com>
+Date:   Sat Sep 26 02:54:03 2026 -0400
+
+    ssh-audit-test: clean error on missing option operand
+
+    - --policy / --port with no value crashed on shift (shift count out of range)
+      instead of reporting the missing operand; validate and die cleanly.
+    - Document that the ssh-audit policy check is server-to-client; OpenSSH sets
+      both directions symmetrically, so it is complete for our OpenSSH targets.
+
+    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
+commit 3ce6b81d5f7f9f1561d33ae0f474d11de8021195
+Author: claude (dev706 06a4d27a-451a-4444-b924-ffce1da248b5) <noreply@anthropic.com>
+Date:   Sat Sep 26 01:46:37 2026 -0400
+
+    Add ssh-audit hardening policies, test tool and CI wiring
+
+    - ssh-audit-test + server/client policies pin the exact hardened algorithm
+      set (allow_algorithm_subset_and_reordering = false); a regression that
+      loosens the ssh config, or a server missing the hardening, now fails loud.
+    - dist-ai consumer wiring runs the config suite per PR and scans production
+      SSH on a schedule.
+
+    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
+commit 2bf04eee21a66fed4f3c45556ebd362cfc6f810f
+Merge: 00bad984 9cb4efa8
+Author: assisted-by-ai <assisted-by-ai@users.noreply.github.com>
+Date:   Thu Sep 24 22:51:46 2026 -0400
+
+    Merge master into ai (remaster)
+
+commit 9cb4efa8a716343271e3339fb7e13408146b7943
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Sat Sep 19 14:09:18 2026 +0000
+
+    bumped changelog version
+
 commit f7e4aa5ed2dbf0cd0d9155695ad4fdf315a1181f
 Merge: a70c168d 87ff42a1
 Author: Patrick Schleizer <adrelanos@whonix.org>
