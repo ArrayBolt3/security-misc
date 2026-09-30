@@ -1,9 +1,9 @@
 ## Copyright (C) 2025 - 2025 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
 ## See the file COPYING for copying conditions.
 
-## Don't edit this file, to overwrite any options, edit a file with a higher
-## number that is read later by SSHD, such as
-## '/etc/ssh/sshd_config.d/50_user.conf'.
+## Don't edit this file; to overwrite any options, edit a file with a lower
+## number that is read earlier by sshd, such as
+## '/etc/ssh/sshd_config.d/10_user.conf'.
 
 ## See also:
 ## https://www.kicksecure.com/wiki/SSH#Server_Configuration_File
@@ -15,18 +15,14 @@ MaxAuthTries 3
 HostKey /etc/ssh/ssh_host_ed25519_key
 HostKeyAlgorithms ssh-ed25519
 PubkeyAcceptedAlgorithms ssh-ed25519,sk-ssh-ed25519@openssh.com
-## chacha20-poly1305 preferred intentionally. Better to use good crypto than to
-## mitigate an attack that only affects people using old and insecure OpenSSH
-## clients.
+## Ciphers that are Terrapin-vulnerable when an outdated client or server are
+## used are intentionally retained. Connections from a Terrapin-vulnerable
+## client cannot be made secure (as any Terrapin-vulnerable client will be
+## vulnerable to other issues as well) and is therefore unsupported.
 Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com
 MACs umac-128-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com
-## Disabling non-quantum-resistant kex algorithms for users in the wild is too
-## risky for now.
-## REMINDER: Remove Curve25519 from the kex algorithm list for Forky
-KexAlgorithms sntrup761x25519-sha512,sntrup761x25519-sha512@openssh.com,mlkem768x25519-sha256,curve25519-sha256,curve25519-sha256@libssh.org
-## To force the use of quantum-resistant key exchange algorithms, override the
-## above with
-# KexAlgorithms sntrup761x25519-sha512,sntrup761x25519-sha512@openssh.com,mlkem768x25519-sha256
+## Only post-quantum-sequre KexAlgorithms are allowed.
+KexAlgorithms sntrup761x25519-sha512,sntrup761x25519-sha512@openssh.com,mlkem768x25519-sha256
 
 ## Override with 'no' to fully deny root login, or leave this as
 ## 'prohibit-password' for denying root password login but still allowing
