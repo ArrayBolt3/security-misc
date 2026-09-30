@@ -784,9 +784,11 @@ undo_policy_for_file() {
         state_user_owner_item="${state_user_owner_list[state_idx]}"
         state_group_owner_item="${state_group_owner_list[state_idx]}"
         state_mode_item="${state_mode_list[state_idx]}"
+        ## style-ok: lpe-symlink-follow,lpe-root-write-user-path -- undo_file is a canonical root-owned system path (state/config are root-owned; symlinks are skipped then realpathed upstream); permission-hardener runs pre-login as root, no user-writable path component to hijack
         chown "${verbose[@]}" -- "${state_user_owner_item}:${state_group_owner_item}" \
           "${undo_file}" || exit_code=202
         ## chmod needs to be run after chown since chown removes suid.
+        ## style-ok: lpe-symlink-follow,lpe-root-write-user-path -- canonical root-owned system path, pre-login root run, no user-writable component (same rationale as the chown above)
         chmod "${verbose[@]}" "${state_mode_item}" "${undo_file}" || exit_code=203
       else
         log info "File does not exist: '${undo_file}'"
