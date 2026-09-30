@@ -10,6 +10,24 @@
 ## Because of his work on Qubes-VM-Hardening.
 ## https://github.com/tasket/Qubes-VM-hardening
 
+## DEPRECATED: withdrawn, scheduled for removal -- do not ship or run.
+## An LPE audit flagged this root-privileged script for unresolved
+## local-privilege-escalation risk while operating on user-controlled home
+## paths, and it is being withdrawn rather than hardened for now. Issues:
+##   - process_folders() walks the user home as root ('find "$full_folder_name"
+##     -print0', home_folder=/home/$user_name) and then acts per path: a TOCTOU
+##     window where the user mutates the tree between the walk and the
+##     write/chown/rm.
+##   - restore_file() 'chown --recursive "$user_name:$user_name"
+##     "$full_path_original_dirname"': a user-planted symlink/dir on the
+##     reconstructed path lets root retarget the recursive chown onto a
+##     sensitive location.
+##   - 'chattr -i' + 'rm "$full_path_original"', and 'mkdir --parents' + 'cp'
+##     into "$full_path_original_dirname" as root: intermediate path components
+##     are user-controlled and symlink-swappable (TOCTOU).
+##   - $user_name comes from --user (argv) and is used unvalidated as
+##     home_folder="/home/$user_name".
+
 #set -x
 set -e
 
