@@ -12,11 +12,9 @@
 
 Host *
   VisualHostKey yes
-  ## Ciphers that are Terrapin-vulnerable when an outdated client or server are
-  ## used are intentionally retained. Connecting to a Terrapin-vulnerable
-  ## server cannot be made secure (as any Terrapin-vulnerable server will be
-  ## vulnerable to other issues as well) and is therefore unsupported.
-  Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes256-ctr
+  ## AEAD-only cipher (aes256-gcm, no chacha20), paired with the post-quantum-only
+  ## key exchange below. Resists harvest-now-decrypt-later capture.
+  Ciphers aes256-gcm@openssh.com
   MACs umac-128-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com
   ## Only post-quantum-sequre KexAlgorithms are allowed.
   KexAlgorithms sntrup761x25519-sha512,sntrup761x25519-sha512@openssh.com,mlkem768x25519-sha256
