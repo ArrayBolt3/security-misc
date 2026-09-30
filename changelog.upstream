@@ -1,9 +1,68 @@
+commit 7f60beb8bffa344453bd6794f92ff72b6098edf3
+Merge: d80e26de cbba86cb
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Wed Sep 30 04:20:30 2026 -0400
+
+    Merge remote-tracking branch 'refs/remotes/ArrayBolt3/arraybolt3/trixie'
+
+commit cbba86cb06d7acd46aaf780f9cd1e5ab4ac97d8d
+Author: Aaron Rainbolt <arraybolt3@gmail.com>
+Date:   Tue Sep 29 22:57:46 2026 -0400
+
+    Polish, reintroduce removed ciphers again but keep the requirement to use post-quantum key exchange
+
+commit 5202e7564b9133ae267c6064c88e69d23d45cd87
+Merge: d80e26de c3b4e219
+Author: Aaron Rainbolt <arraybolt3@gmail.com>
+Date:   Tue Sep 29 22:33:57 2026 -0400
+
+    Merge branch 'ai' into arraybolt3/trixie
+
+commit c3b4e219acaf5b853c8a3d71f32360ae5db3aa32
+Merge: 96c0366c d217e28d
+Author: assisted-by-ai <assisted-by-ai@users.noreply.github.com>
+Date:   Tue Sep 29 04:28:20 2026 -0400
+
+    Merge arraybolt3/trixie into ai (remaster)
+
+commit d80e26defda7271a513cb6ba8ddee7c3e9ae83cf
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Tue Sep 29 08:08:57 2026 +0000
+
+    bumped changelog version
+
+commit 96c0366cdc53005b5a06104d6c9c325c12c87882
+Author: claude (dev706 06a4d27a-451a-4444-b924-ffce1da248b5) <noreply@anthropic.com>
+Date:   Mon Sep 28 02:58:45 2026 -0400
+
+    ssh: fix override advice; sync interop comments
+
+    - OpenSSH is first-wins: a lower-numbered drop-in (or ~/.ssh/config) overrides, not a higher-numbered one
+
+    - server comment no longer claims the client stays broad; the client config is equally strict
+
+    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
 commit aba02ec3634c006ea993c4609cf9a31c2e65a2b4
 Merge: 9cb4efa8 d217e28d
 Author: Patrick Schleizer <adrelanos@whonix.org>
 Date:   Mon Sep 28 02:40:50 2026 -0400
 
     Merge remote-tracking branch 'refs/remotes/ArrayBolt3/arraybolt3/trixie'
+
+commit 802205a4b8e9519ebd04eda34f5428ec8719ed59
+Author: claude (dev706 06a4d27a-451a-4444-b924-ffce1da248b5) <noreply@anthropic.com>
+Date:   Mon Sep 28 01:19:07 2026 -0400
+
+    ssh client: post-quantum-only kex + aes256-gcm (match server)
+
+    - The client default now uses the same strictest set as the server: PQ-only
+      key exchange and the aes256-gcm cipher only (drop curve25519, chacha20,
+      aes256-ctr). Outbound SSH therefore only reaches post-quantum-capable
+      servers; override per-host in ~/.ssh/config or a 50_user.conf drop-in for a
+      server with a narrower algorithm set.
+
+    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 
 commit d217e28daaaa3ef05d3f489180ec920eb2a4e18a
 Author: Aaron Rainbolt <arraybolt3@gmail.com>
