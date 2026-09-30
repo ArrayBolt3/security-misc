@@ -335,7 +335,16 @@ GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX proc_mem.force_override=ptrace"
 ## KSPP=yes
 ## KSPP sets CONFIG_INTEL_IOMMU=y, CONFIG_INTEL_IOMMU_DEFAULT_ON=y, CONFIG_INTEL_IOMMU_SVM=y, CONFIG_AMD_IOMMU=y, and CONFIG_AMD_IOMMU_V2=y.
 ##
-GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX amd_iommu=force_isolation"
+## Opt-out available because amd_iommu=force_isolation can hang early boot on
+## some AMD hardware, observed hanging during udev device enumeration on an
+## AMD Ryzen OVH dedicated server. The default stays ON. To disable only this
+## option, set the following in /etc/default/grub:
+##    security_misc_amd_iommu_force_isolation=false
+## https://www.kicksecure.com/wiki/Broken_Boot
+##
+if [ "${security_misc_amd_iommu_force_isolation:-}" != "false" ]; then
+   GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX amd_iommu=force_isolation"
+fi
 GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX intel_iommu=on"
 
 ## Enable and force use of IOMMU translation to protect against some DMA attacks.
@@ -366,7 +375,16 @@ GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX iommu.strict=1"
 ## KSPP=yes
 ## KSPP sets CONFIG_EFI_DISABLE_PCI_DMA=y.
 ##
-GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX efi=disable_early_pci_dma"
+## Opt-out available because efi=disable_early_pci_dma can hang early boot
+## silently in the EFI stub, before console init, on some AMD/UEFI hardware,
+## observed on an AMD Ryzen OVH dedicated server. The default stays ON. To
+## disable only this option, set the following in /etc/default/grub:
+##    security_misc_efi_disable_early_pci_dma=false
+## https://www.kicksecure.com/wiki/Broken_Boot
+##
+if [ "${security_misc_efi_disable_early_pci_dma:-}" != "false" ]; then
+   GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX efi=disable_early_pci_dma"
+fi
 
 ## 3. Entropy:
 ##
