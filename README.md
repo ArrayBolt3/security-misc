@@ -288,13 +288,6 @@ Direct memory access:
 - Clear the busmaster bit on all PCI bridges during the EFI hand-off, which disables
   DMA before the IOMMU is configured. May cause boot failure on certain hardware.
 
-Two of these options can hang early boot on some AMD hardware. Both stay enabled by
-default and can each be disabled individually, without weakening any other hardening,
-by setting `security_misc_efi_disable_early_pci_dma=false` (EFI stub hang) or
-`security_misc_amd_iommu_force_isolation=false` (udev enumeration hang) in
-`/etc/default/grub`, then regenerating the GRUB configuration.
-https://www.kicksecure.com/wiki/Broken_Boot
-
 Entropy:
 
 - Do not credit the CPU seeds as an entropy source at boot in order to maximize the
