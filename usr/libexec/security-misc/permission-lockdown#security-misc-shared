@@ -60,9 +60,11 @@ home_folder_access_rights_lockdown() {
       ## See also: user private groups UPGs
       ## https://wiki.debian.org/UserPrivateGroups
       printf '%s\n' "$0: chmod o-rwx \"${folder_name}\""
-      ## style-ok: lpe-symlink-follow,lpe-root-write-user-path -- /home is root:root 0755, so a user cannot swap the /home/<user> entry for a symlink; runs as root at postinst
+      ## style-ok: lpe-symlink-follow,lpe-root-write-user-path -- /home is
+      ## root:root 0755, so individual user home directories cannot be unsafe
+      ## symlinks.
       chmod o-rwx "${folder_name}" || true
-      ## style-ok: lpe-symlink-follow -- state-files dir is root-owned under /var/cache; user is a single path component from dir /home, not user-writable
+      ## style-ok: lpe-symlink-follow -- state-files dir is root-owned.
       touch "/var/cache/security-misc/state-files/${user}" || true
    done
 }
