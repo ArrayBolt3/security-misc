@@ -10,6 +10,7 @@ set -o pipefail
 set -o errtrace
 shopt -s inherit_errexit
 shopt -s shift_verbose
+export LC_ALL=C
 
 # /usr/libexec/security-misc/permission-lockdown: user: root | chmod o-rwx "/root"
 # /usr/libexec/security-misc/permission-lockdown: user: daemon | chmod o-rwx "/usr/sbin"
@@ -59,7 +60,9 @@ home_folder_access_rights_lockdown() {
       ## See also: user private groups UPGs
       ## https://wiki.debian.org/UserPrivateGroups
       printf '%s\n' "$0: chmod o-rwx \"${folder_name}\""
+      ## style-ok: lpe-symlink-follow,lpe-root-write-user-path -- /home is root:root 0755, so a user cannot swap the /home/<user> entry for a symlink; runs as root at postinst
       chmod o-rwx "${folder_name}" || true
+      ## style-ok: lpe-symlink-follow -- state-files dir is root-owned under /var/cache; user is a single path component from dir /home, not user-writable
       touch "/var/cache/security-misc/state-files/${user}" || true
    done
 }

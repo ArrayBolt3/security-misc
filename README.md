@@ -1016,11 +1016,6 @@ See: `/usr/lib/systemd/system-preset/50-security-misc.preset`
 - Set `dracut` `reproducible=yes` setting.
   `/etc/dracut.conf.d/30-security-misc.conf`
 
-- A `virusforget` script detects unauthorized changes to a set of sensitive
-  files by comparing them against a stored baseline. Work in progress - the
-  implementation will likely change significantly.
-  `/usr/libexec/security-misc/virusforget`
-
 - A custom `askpass` helper provides a GUI password prompt via `yad` for
   superuser actions.
   `/usr/libexec/security-misc/askpass`

@@ -15,11 +15,9 @@ MaxAuthTries 3
 HostKey /etc/ssh/ssh_host_ed25519_key
 HostKeyAlgorithms ssh-ed25519
 PubkeyAcceptedAlgorithms ssh-ed25519,sk-ssh-ed25519@openssh.com
-## Ciphers that are Terrapin-vulnerable when an outdated client or server are
-## used are intentionally retained. Connections from a Terrapin-vulnerable
-## client cannot be made secure (as any Terrapin-vulnerable client will be
-## vulnerable to other issues as well) and is therefore unsupported.
-Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com
+## AEAD-only cipher (aes256-gcm, no chacha20), paired with the post-quantum-only
+## key exchange below. Resists harvest-now-decrypt-later capture.
+Ciphers aes256-gcm@openssh.com
 MACs umac-128-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com
 ## Only post-quantum-sequre KexAlgorithms are allowed.
 KexAlgorithms sntrup761x25519-sha512,sntrup761x25519-sha512@openssh.com,mlkem768x25519-sha256

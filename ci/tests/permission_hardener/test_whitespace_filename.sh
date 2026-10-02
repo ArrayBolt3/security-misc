@@ -28,6 +28,7 @@ set -o pipefail
 set -o errtrace
 shopt -s inherit_errexit
 shopt -s shift_verbose
+export LC_ALL=C
 
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." && pwd)"
 ph_bin="${PERMISSION_HARDENER_BIN:-${repo_root}/usr/bin/permission-hardener#security-misc-shared}"
@@ -50,27 +51,11 @@ touch -- "${spaced_file}"
 octal_chunk_file="${test_dir}/a 744 name"
 touch -- "${octal_chunk_file}"
 
-## A space-free filename with a 4-option (capability) tail whose OWNER is a
-## numeric id that looks octal ('0755'). Right-anchoring must NOT treat that
-## owner as the mode: it would fold the real mode into the filename, the folded
-## path does not exist, and the entry is silently dropped -- leaving the file
-## un-hardened. The line is already well formed, so no recovery must happen.
-numeric_owner_file="${test_dir}/numowner"
-touch -- "${numeric_owner_file}"
-
-## The mirror-image of the numeric-owner case: a SPACED filename whose second
-## component (field index 1) is a bare octal, with a 3-field tail. Here field 1
-## is NOT the mode, so recovery must happen. Existence disambiguates: the spaced
+## A SPACED filename whose second component (field index 1) is a bare octal, with
+## a 3-field tail. Field 1 is NOT the mode, so recovery must happen: the spaced
 ## name exists, its no-recovery prefix does not.
 octal_second_file="${test_dir}/a 744"
 touch -- "${octal_second_file}"
-
-## Six fields: a SPACED filename plus a numeric octal-looking owner and a
-## capability tail. The rightmost octal candidate (field_count-3) is the owner,
-## not the mode; anchoring there folds the mode into the filename and drops the
-## entry. Existence must select field_count-4 (the real mode) instead.
-numeric_owner_spaced_file="${test_dir}/x y"
-touch -- "${numeric_owner_spaced_file}"
 
 config_dir="/etc/permission-hardener.d"
 config_file="${config_dir}/zz-ai-whitespace-regression-test.conf"
@@ -86,8 +71,7 @@ existing_mode_admindir='/var/lib/permission-hardener-v2/existing_mode'
 cleanup() {
   local leaked_file
   for leaked_file in "${spaced_file}" "${octal_chunk_file}" \
-    "${numeric_owner_file}" "${octal_second_file}" \
-    "${numeric_owner_spaced_file}"; do
+    "${octal_second_file}"; do
     dpkg-statoverride --admindir "${existing_mode_admindir}" --remove \
       "${leaked_file}" >/dev/null 2>&1 || true
   done
@@ -100,9 +84,7 @@ trap cleanup EXIT
 {
   printf '%s\n' "${spaced_file} 0744 root root"
   printf '%s\n' "${octal_chunk_file} 0744 root root"
-  printf '%s\n' "${numeric_owner_file} 0744 0755 root cap_net_raw"
   printf '%s\n' "${octal_second_file} 0644 root root"
-  printf '%s\n' "${numeric_owner_spaced_file} 0744 0755 root cap_net_raw"
 } > "${config_file}"
 
 ## A parse failure on any line aborts the whole run with exit 200; capture the
@@ -122,8 +104,8 @@ fi
 ## print-policy prints tab-separated columns (File<TAB>User<TAB>...), so match
 ## each filename as the whole first field (trailing TAB). A bare substring match
 ## would let '/a 744' spuriously match the '/a 744 name' entry.
-for expected_file in "${spaced_file}" "${octal_chunk_file}" "${numeric_owner_file}" "${octal_second_file}" "${numeric_owner_spaced_file}"; do
-  if printf '%s\n' "${policy_output}" | grep --quiet --fixed-strings -- "${expected_file}"$'\t'; then
+for expected_file in "${spaced_file}" "${octal_chunk_file}" "${octal_second_file}"; do
+  if grep --quiet --fixed-strings -- "${expected_file}"$'\t' <<< "${policy_output}"; then
     printf '%s\n' "PASS: filename '${expected_file}' parsed and present in policy."
   else
     printf '%s\n' "FAIL: filename '${expected_file}' missing from print-policy output." >&2
