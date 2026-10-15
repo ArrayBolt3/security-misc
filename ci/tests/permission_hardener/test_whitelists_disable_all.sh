@@ -4,8 +4,6 @@
 
 ## AI-Assisted
 
-## WARNING: Not human-reviewed, MUST be moved to dist-ai.
-
 ## Regression test: the documented special directive 'whitelists_disable_all=true'
 ## must be honored, not rejected.
 ##
@@ -66,11 +64,8 @@ trap cleanup EXIT
 
 ## The directive line aborts the whole run (exit 200) on the buggy ordering;
 ## capture the status via an 'if' condition (errexit stays enabled).
-if policy_output="$( "${ph_bin}" print-policy 2>/dev/null )"; then
-  ph_rc=0
-else
-  ph_rc=$?
-fi
+ph_rc=0
+policy_output="$( "${ph_bin}" print-policy 2>/dev/null )" || ph_rc="$?"
 
 test_status=0
 if [ "${ph_rc}" -ne 0 ]; then

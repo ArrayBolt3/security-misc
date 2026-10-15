@@ -4,8 +4,6 @@
 
 ## AI-Assisted
 
-## WARNING: Not human-reviewed, MUST be moved to dist-ai.
-
 ## Regression test: permission-hardener must parse a config filename that
 ## contains spaces.
 ##
@@ -88,13 +86,9 @@ trap cleanup EXIT
 } > "${config_file}"
 
 ## A parse failure on any line aborts the whole run with exit 200; capture the
-## status via an 'if' condition (errexit stays enabled) so the failure is
-## reported cleanly rather than aborting the test.
-if policy_output="$( "${ph_bin}" print-policy 2>/dev/null )"; then
-  ph_rc=0
-else
-  ph_rc=$?
-fi
+## status so the failure is reported cleanly rather than aborting the test.
+ph_rc=0
+policy_output="$( "${ph_bin}" print-policy 2>/dev/null )" || ph_rc="$?"
 
 test_status=0
 if [ "${ph_rc}" -ne 0 ]; then
