@@ -307,6 +307,10 @@ void print_usage(void) {
   print(fd_stderr, "  --instant-shutdown\n");
   print(fd_stderr, "    Immediately triggers an emergency shutdown. Cannot be combined\n");
   print(fd_stderr, "    with other options.\n");
+  print(fd_stderr, "  --debug\n");
+  print(fd_stderr, "    Verbosely reports events that emerg-shutdown is monitoring and\n");
+  print(fd_stderr, "    internal program state. If a shutdown would be triggered, prints a\n");
+  print(fd_stderr, "    clear message indicating this and exits without shutting down.\n");
   print(fd_stderr, "  --monitor-fifo\n");
   print(fd_stderr, "    Used internally to implement the ensure-shutdown service. Do\n");
   print(fd_stderr, "    not use.\n");
@@ -531,6 +535,7 @@ void hw_monitor(int argc, char **argv) {
   struct pollfd *pollfd_list = NULL;
   struct input_event ie_buf[64];
   bool paranoid_mode = false;
+  bool debug_mode = false;
 
   /* Index variables */
   int arg_idx = 0;
@@ -557,6 +562,8 @@ void hw_monitor(int argc, char **argv) {
       load_list(argv[arg_idx], &target_dev_list_len, &target_dev_name_raw_list, ",", true);
     } else if (strcmp(argv[arg_idx], "--paranoid") == 0) {
       paranoid_mode = true;
+    } else if (strcmp(argv[arg_idx], "--debug") == 0) {
+      debug_mode = true;
     } else if (strncmp(argv[arg_idx], "--keys=", strlen("--keys=")) == 0) {
       if (panic_key_str_list != NULL) {
         print(fd_stderr, "--keys cannot be passed more than once!\n");
@@ -579,6 +586,47 @@ void hw_monitor(int argc, char **argv) {
   }
 
   ignore_signals(false); /* ignore all but SIGTERM */
+
+  if (debug_mode) {
+    char *num_devices_str = NULL;
+    char *num_keys_str = NULL;
+    num_devices_str = int_to_str((uint32_t)(target_dev_list_len));
+    print(fd_stderr, "DEBUG: Configuration dump:\n");
+    print(fd_stderr, "DEBUG:   Number of devices: ");
+    print(fd_stderr, num_devices_str);
+    print(fd_stderr, "\n");
+    free(num_devices_str);
+    num_devices_str = NULL;
+    for (uint32_t i = 0; i < target_dev_list_len; i++) {
+      char *i_str = int_to_str(i + 1);
+      print(fd_stderr, "DEBUG:   Device ");
+      print(fd_stderr, i_str);
+      print(fd_stderr, ": '");
+      print(fd_stderr, target_dev_name_raw_list[i]);
+      print(fd_stderr, "'\n");
+      free(i_str);
+    }
+    print(fd_stderr, "DEBUG:   Paranoid mode: ");
+    if (paranoid_mode) {
+      print(fd_stderr, "True\n");
+    } else {
+      print(fd_stderr, "False\n");
+    }
+    num_keys_str = int_to_str((uint32_t)(panic_key_list_len));
+    print(fd_stderr, "DEBUG:   Number of panic keys groups: ");
+    print(fd_stderr, num_keys_str);
+    print(fd_stderr, "\n");
+    free(num_keys_str);
+    for (uint32_t i = 0; i < panic_key_list_len; i++) {
+      char *i_str = int_to_str(i + 1);
+      print(fd_stderr, "DEBUG:   Key group ");
+      print(fd_stderr, i_str);
+      print(fd_stderr, ": '");
+      print(fd_stderr, panic_key_str_list[i]);
+      print(fd_stderr, "'\n");
+      free(i_str);
+    }
+  }
 
   console_fd = open("/dev/console", O_RDWR);
   if (console_fd == -1) {
@@ -645,6 +693,15 @@ void hw_monitor(int argc, char **argv) {
       exit(1);
     }
 
+    if (debug_mode) {
+      char *tdl_idx_str = int_to_str((uint32_t)(tdl_idx));
+      print(fd_stderr, "DEBUG: Parsed device name ");
+      print(fd_stderr, tdl_idx_str);
+      print(fd_stderr, ": '");
+      print(fd_stderr, target_dev_name);
+      print(fd_stderr, "'\n");
+      free(tdl_idx_str);
+    }
     target_dev_list[tdl_idx] = calloc(1, strlen(target_dev_name) + 1);
     memcpy(target_dev_list[tdl_idx], target_dev_name, strlen(target_dev_name) + 1);
     free(target_dev_parse);
@@ -667,6 +724,23 @@ void hw_monitor(int argc, char **argv) {
         print(fd_stderr, "'!\n");
         print_usage();
         exit(1);
+      }
+      if (debug_mode) {
+        char *pkl_idx_str = int_to_str((uint32_t)(pkl_idx));
+        char *kg_idx_str = int_to_str((uint32_t)(kg_idx));
+        char *keycode_str = int_to_str(keycode);
+        print(fd_stderr, "DEBUG: Key group ");
+        print(fd_stderr, pkl_idx_str);
+        print(fd_stderr, " entry ");
+        print(fd_stderr, kg_idx_str);
+        print(fd_stderr, " '");
+        print(fd_stderr, keygroup_str_list[kg_idx]);
+        print(fd_stderr, "' mapped to key code ");
+        print(fd_stderr, keycode_str);
+        print(fd_stderr, "\n");
+        free(keycode_str);
+        free(kg_idx_str);
+        free(pkl_idx_str);
       }
       pkl_element[kg_idx] = keycode;
       free(keygroup_str_list[kg_idx]);
@@ -691,6 +765,9 @@ void hw_monitor(int argc, char **argv) {
     print(fd_stderr, "Failed to bind netlink socket!\n");
     exit(1);
   }
+  if (debug_mode) {
+    print(fd_stderr, "DEBUG: Connected to kernel uevent netlink socket\n");
+  }
 
   /* Keyboard event listener setup
    * Heavily inspired by systemd/src/login/logind-button.c and
@@ -711,6 +788,12 @@ void hw_monitor(int argc, char **argv) {
       continue;
     }
 
+    if (debug_mode) {
+      print(fd_stderr, "DEBUG: Found evdev device '");
+      print(fd_stderr, input_path_buf);
+      print(fd_stderr, "'\n");
+    }
+
     if (ioctl(tmp_fd, EVIOCGBIT(EV_SYN, sizeof(key_flags)), key_flags) < 0) {
       print(fd_stderr, "Failed to query properties of input device '");
       print(fd_stderr, input_path_buf);
@@ -719,6 +802,11 @@ void hw_monitor(int argc, char **argv) {
     }
 
     if (!bitset_get(key_flags, EV_KEY)) {
+      if (debug_mode) {
+        print(fd_stderr, "DEBUG: Device '");
+        print(fd_stderr, input_path_buf);
+        print(fd_stderr, "' is not a keyboard, ignoring\n");
+      }
       close(tmp_fd);
       continue;
     }
@@ -739,6 +827,13 @@ void hw_monitor(int argc, char **argv) {
         }
       }
       if (!group_supported) {
+        if (debug_mode) {
+          print(fd_stderr, "DEBUG: Device '");
+          print(fd_stderr, input_path_buf);
+          print(fd_stderr, "' does not support any keys in panic key group '");
+          print(fd_stderr, panic_key_str_list[pkl_idx]);
+          print(fd_stderr, "', ignoring\n");
+        }
         supports_panic = false;
         break;
       }
@@ -748,6 +843,11 @@ void hw_monitor(int argc, char **argv) {
       continue;
     }
 
+    if (debug_mode) {
+      print(fd_stderr, "DEBUG: Device '");
+      print(fd_stderr, input_path_buf);
+      print(fd_stderr, "' supports all panic key groups, registering\n");
+    }
     event_fd_list_len++;
     event_fd_list = safe_reallocarray(event_fd_list, event_fd_list_len, sizeof(int));
     event_fd_list[event_fd_list_len - 1] = tmp_fd;
@@ -766,10 +866,19 @@ void hw_monitor(int argc, char **argv) {
   }
   pollfd_list[event_fd_list_len].fd = ns;
   pollfd_list[event_fd_list_len].events = POLLIN;
+  if (debug_mode) {
+    print(fd_stderr, "DEBUG: Set up poll fds\n");
+  }
 
   /* Event loop */
   while (poll(pollfd_list, event_fd_list_len + 1, -1) != -1) {
     size_t ie_max_idx = 0;
+
+     /*
+      * Debugging output for every event loop iteration and every keypress
+      * intentionally omitted to keep emerg-shutdown from becoming a keylogger
+      * or biometric info leak.
+      */
 
     /* Panic key handler */
     for (efl_idx = 0; efl_idx < event_fd_list_len; efl_idx++) {
@@ -801,9 +910,26 @@ void hw_monitor(int argc, char **argv) {
         for (pkl_idx = 0; pkl_idx < panic_key_list_len; pkl_idx++) {
           for (kg_idx = 0; panic_key_list[pkl_idx][kg_idx] != 0; kg_idx++) {
             if (ie_buf[ie_idx].code == panic_key_list[pkl_idx][kg_idx]) {
+              if (debug_mode) {
+                char *keycode_str = int_to_str(ie_buf[ie_idx].code);
+                char *pkl_idx_str = int_to_str((uint32_t)(pkl_idx));
+                print(fd_stderr, "DEBUG: Keycode ");
+                print(fd_stderr, keycode_str);
+                print(fd_stderr, " (part of panic key group ");
+                print(fd_stderr, pkl_idx_str);
+                print(fd_stderr, ") now considered ");
+                free(keycode_str);
+                free(pkl_idx_str);
+              }
               if (ie_buf[ie_idx].value == 0) {
+                if (debug_mode) {
+                  print(fd_stderr, "released\n");
+                }
                 panic_key_active_list[pkl_idx] = false;
               } else {
+                if (debug_mode) {
+                  print(fd_stderr, "pressed\n");
+                }
                 panic_key_active_list[pkl_idx] = true;
               }
               break; /* only breaks inner loop */
@@ -816,7 +942,12 @@ void hw_monitor(int argc, char **argv) {
             break;
           }
           if (pkl_idx == (panic_key_list_len - 1)) {
-            kill_system();
+            if (debug_mode) {
+              print(fd_stderr, "DEBUG: Would kill system because of panic key combo!\n");
+              exit(0);
+            } else {
+              kill_system();
+            }
           }
         }
       }
@@ -865,7 +996,12 @@ void hw_monitor(int argc, char **argv) {
 
       len = recvmsg(ns, &msg, 0);
       if (len == -1) {
-        kill_system();
+        if (debug_mode) {
+          print(fd_stderr, "DEBUG: Would kill system for netlink cutoff!\n");
+          exit(0);
+        } else {
+          kill_system();
+        }
       }
 
       if (len < 8) {
@@ -935,23 +1071,67 @@ void hw_monitor(int argc, char **argv) {
             }
 
             if (device_changed && strncmp(rem_dev_name, "sr", 2) != 0) {
+              if (debug_mode) {
+                print(fd_stderr, "DEBUG: Ignoring event on device '");
+                print(fd_stderr, rem_dev_name);
+                print(fd_stderr,
+                  "' because ACTION=change and device name does not start with 'sr'\n");
+              }
               free(rem_devname_line);
               goto next_str;
             }
 
             if (device_changed && !disk_media_changed) {
+              if (debug_mode) {
+                print(fd_stderr, "DEBUG: Ignoring event on device '");
+                print(fd_stderr, rem_dev_name);
+                print(fd_stderr,
+                  "' because ACTION=change but DISK_MEDIA_CHANGE=1 was not received\n");
+              }
               free(rem_devname_line);
               goto next_str;
             }
 
             if (paranoid_mode) {
               /* Something was removed, we don't care what, shut down now */
-              kill_system();
+              if (debug_mode) {
+                print(fd_stderr, "DEBUG: Would kill system because device '");
+                print(fd_stderr, rem_dev_name);
+                print(fd_stderr, "' was removed and paranoid mode is active!\n");
+                exit(0);
+              } else {
+                kill_system();
+              }
             }
 
             for (tdl_idx = 0; tdl_idx < target_dev_list_len; tdl_idx++) {
               if (strcmp(rem_dev_name, target_dev_list[tdl_idx]) == 0) {
-                kill_system();
+                if (debug_mode) {
+                  print(fd_stderr, "DEBUG: Would kill system because device '");
+                  print(fd_stderr, rem_dev_name);
+                  print(fd_stderr, "' was removed! ACTION=remove: ");
+                  if (device_removed) {
+                    print(fd_stderr, "True");
+                  } else {
+                    print(fd_stderr, "False");
+                  }
+                  print(fd_stderr, ", ACTION=change: ");
+                  if (device_changed) {
+                    print(fd_stderr, "True");
+                  } else {
+                    print(fd_stderr, "False");
+                  }
+                  print(fd_stderr, ", DISK_MEDIA_CHANGE=1: ");
+                  if (disk_media_changed) {
+                    print(fd_stderr, "True");
+                  } else {
+                    print(fd_stderr, "False");
+                  }
+                  print(fd_stderr, "\n");
+                  exit(0);
+                } else {
+                  kill_system();
+                }
               }
             }
 

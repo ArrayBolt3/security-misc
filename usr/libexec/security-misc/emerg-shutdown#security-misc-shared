@@ -19,7 +19,9 @@ if [ -f '/dracut-state.sh' ]; then
 fi
 binary_prefix='/run'
 EMERG_SHUTDOWN_KEYS=''
+DEBUG="${DEBUG:-false}"
 root_devices[0]=''
+debug_maybe=()
 
 ## Read emergency shutdown key configuration
 for config_file in /etc/security-misc/emerg-shutdown/*.conf /usr/local/etc/security-misc/emerg-shutdown/*.conf; do
@@ -60,8 +62,12 @@ else
   memlockd -c /usr/share/security-misc/security-misc-memlockd.cfg || true
 fi
 
+if [ "${DEBUG,,}" = 'true' ]; then
+  debug_maybe=( '--debug' )
+fi
+
 systemd-notify --ready
 
 ## Launch emerg-shutdown
 IFS=','
-"${binary_prefix}/emerg-shutdown" "--devices=${root_devices[*]}" "--keys=${EMERG_SHUTDOWN_KEYS}"
+"${binary_prefix}/emerg-shutdown" "--devices=${root_devices[*]}" "--keys=${EMERG_SHUTDOWN_KEYS}" "${debug_maybe[@]}"

@@ -32,3 +32,13 @@ EMERG_SHUTDOWN_KEYS="KEY_LEFTCTRL|KEY_RIGHTCTRL,KEY_LEFTALT|KEY_RIGHTALT,KEY_END
 ## seconds *longer* than DefaultTimeoutStopSec, to give normal shutdown a
 ## chance to actually succeed before forcibly shutting down the system.
 ENSURE_SHUTDOWN_TIMEOUT=30
+
+## Configure debug mode. When set to 'true', emerg-shutdown will exit instead
+## of powering off the system if a poweroff condition is hit, and will output
+## verbose logs about its state and why it thinks the system should be powered
+## off.
+##
+## All security benefits of emerg-shutdown are lost when this option is
+## enabled! Only enable this temporarily, and only if emerg-shutdown is
+## mistakenly powering off your system and you wish to understand why.
+DEBUG="false"

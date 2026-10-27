@@ -1,6 +1,11 @@
 SUBSYSTEM!="input", GOTO="end"
 
-# new keyboard or mouse attached or removed, restart emerg-shutdown
+## New keyboard or mouse attached or removed, restart emerg-shutdown
+##
+## FIXME: This may cause complications with paranoid mode. Remove this
+## configuration and change emerg-shutdown to detect new input devices using
+## inotify before advertising the paranoid mode feature in emerg-shutdown's
+## configuration file.
 KERNEL=="event*", ACTION=="add", ENV{ID_INPUT_KEYBOARD}=="1", RUN+="/usr/bin/systemctl restart emerg-shutdown.service"
 KERNEL=="event*", ACTION=="add", ENV{ID_INPUT_KEYBOARD}=="1", GOTO="end"
 KERNEL=="event*", ACTION=="remove", ENV{ID_INPUT_KEYBOARD}=="1", RUN+="/usr/bin/systemctl restart emerg-shutdown.service"
