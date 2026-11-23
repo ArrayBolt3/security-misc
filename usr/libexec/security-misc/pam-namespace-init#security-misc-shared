@@ -1,0 +1,45 @@
+#!/bin/bash
+
+## Copyright (C) 2025 - 2025 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
+## See the file COPYING for copying conditions.
+
+## AI-Assisted
+
+## pam_namespace instance init script (referenced via iscript= in
+## /etc/security/namespace.d/30_security-misc.conf). Runs as root, once per
+## instantiation, right after the private instance is mounted over the polydir.
+##
+## Args passed by linux-pam pam_namespace:
+##   $1 polydir  $2 instance_dir  $3 newly_created(0|1)  $4 user
+##   $5 polydir_path_safe(0|1)    $6 instance_path_safe(0|1)
+##
+## Purpose: a freshly created /tmp instance starts empty, so the X11 and ICE
+## socket directories are absent. Recreate them mode 1777 so Xwayland and any
+## client that binds or stats /tmp/.X11-unix keeps working. Idempotent
+## (install --directory), so re-running it on each session is harmless. No-op
+## for every other polydir. No SELinux handling and no $HOME logic -
+## security-misc never polyinstantiates $HOME.
+
+set -o errexit
+set -o nounset
+set -o pipefail
+set -o errtrace
+shopt -s inherit_errexit
+shopt -s shift_verbose
+export LC_ALL=C
+
+polydir="${1:-}"
+
+## style-ok: R-170 - "/tmp" here is the literal pam_namespace polydir name to
+## match (as set in namespace.d/30_security-misc.conf), not a temp-file path;
+## ${TMP} would be the wrong value to compare against.
+if [ "${polydir}" = "/tmp" ]; then
+   socket_dir=""
+   for socket_dir in "${polydir}/.X11-unix" "${polydir}/.ICE-unix" ; do
+      install --directory --mode=1777 -- "${socket_dir}"
+   done
+fi
+
+## Must exit 0: pam_namespace treats a non-zero init script exit as a setup
+## failure, and with 'required' that would deny the whole session.
+exit 0

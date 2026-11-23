@@ -1,0 +1,6 @@
+Name: Polyinstantiate per-account temporary directories (by package security-misc-shared)
+Default: yes
+Priority: 128
+Session-Type: Additional
+Session:
+	required	pam_namespace.so

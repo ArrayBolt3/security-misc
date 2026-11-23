@@ -1,0 +1,194 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "components": [
+    {
+      "bom-ref": "pkg:deb/debian/adduser",
+      "name": "adduser",
+      "purl": "pkg:deb/debian/adduser",
+      "type": "library"
+    },
+    {
+      "bom-ref": "pkg:deb/debian/apparmor-profile-dist",
+      "name": "apparmor-profile-dist",
+      "purl": "pkg:deb/debian/apparmor-profile-dist",
+      "type": "library"
+    },
+    {
+      "bom-ref": "pkg:deb/debian/build-essential",
+      "name": "build-essential",
+      "purl": "pkg:deb/debian/build-essential",
+      "type": "library"
+    },
+    {
+      "bom-ref": "pkg:deb/debian/dmsetup",
+      "name": "dmsetup",
+      "purl": "pkg:deb/debian/dmsetup",
+      "type": "library"
+    },
+    {
+      "bom-ref": "pkg:deb/debian/helper-scripts",
+      "name": "helper-scripts",
+      "purl": "pkg:deb/debian/helper-scripts",
+      "type": "library"
+    },
+    {
+      "bom-ref": "pkg:deb/debian/libcap2-bin",
+      "name": "libcap2-bin",
+      "purl": "pkg:deb/debian/libcap2-bin",
+      "type": "library"
+    },
+    {
+      "bom-ref": "pkg:deb/debian/libdbus-1-dev",
+      "name": "libdbus-1-dev",
+      "purl": "pkg:deb/debian/libdbus-1-dev",
+      "type": "library"
+    },
+    {
+      "bom-ref": "pkg:deb/debian/libglib2.0-bin",
+      "name": "libglib2.0-bin",
+      "purl": "pkg:deb/debian/libglib2.0-bin",
+      "type": "library"
+    },
+    {
+      "bom-ref": "pkg:deb/debian/libpam-modules-bin",
+      "name": "libpam-modules-bin",
+      "purl": "pkg:deb/debian/libpam-modules-bin",
+      "type": "library"
+    },
+    {
+      "bom-ref": "pkg:deb/debian/libpam-runtime",
+      "name": "libpam-runtime",
+      "purl": "pkg:deb/debian/libpam-runtime",
+      "type": "library"
+    },
+    {
+      "bom-ref": "pkg:deb/debian/libpam-umask",
+      "name": "libpam-umask",
+      "purl": "pkg:deb/debian/libpam-umask",
+      "type": "library"
+    },
+    {
+      "bom-ref": "pkg:deb/debian/libsystemd-dev",
+      "name": "libsystemd-dev",
+      "purl": "pkg:deb/debian/libsystemd-dev",
+      "type": "library"
+    },
+    {
+      "bom-ref": "pkg:deb/debian/memlockd",
+      "name": "memlockd",
+      "purl": "pkg:deb/debian/memlockd",
+      "type": "library"
+    },
+    {
+      "bom-ref": "pkg:deb/debian/pkgconf",
+      "name": "pkgconf",
+      "purl": "pkg:deb/debian/pkgconf",
+      "type": "library"
+    },
+    {
+      "bom-ref": "pkg:deb/debian/python3",
+      "name": "python3",
+      "purl": "pkg:deb/debian/python3",
+      "type": "library"
+    },
+    {
+      "bom-ref": "pkg:deb/debian/secure-delete",
+      "name": "secure-delete",
+      "purl": "pkg:deb/debian/secure-delete",
+      "type": "library"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:deb/debian/adduser"
+    },
+    {
+      "ref": "pkg:deb/debian/apparmor-profile-dist"
+    },
+    {
+      "ref": "pkg:deb/debian/build-essential"
+    },
+    {
+      "ref": "pkg:deb/debian/dmsetup"
+    },
+    {
+      "ref": "pkg:deb/debian/helper-scripts"
+    },
+    {
+      "ref": "pkg:deb/debian/libcap2-bin"
+    },
+    {
+      "ref": "pkg:deb/debian/libdbus-1-dev"
+    },
+    {
+      "ref": "pkg:deb/debian/libglib2.0-bin"
+    },
+    {
+      "ref": "pkg:deb/debian/libpam-modules-bin"
+    },
+    {
+      "ref": "pkg:deb/debian/libpam-runtime"
+    },
+    {
+      "ref": "pkg:deb/debian/libpam-umask"
+    },
+    {
+      "ref": "pkg:deb/debian/libsystemd-dev"
+    },
+    {
+      "ref": "pkg:deb/debian/memlockd"
+    },
+    {
+      "ref": "pkg:deb/debian/pkgconf"
+    },
+    {
+      "ref": "pkg:deb/debian/python3"
+    },
+    {
+      "ref": "pkg:deb/debian/secure-delete"
+    },
+    {
+      "dependsOn": [
+        "pkg:deb/debian/adduser",
+        "pkg:deb/debian/apparmor-profile-dist",
+        "pkg:deb/debian/build-essential",
+        "pkg:deb/debian/dmsetup",
+        "pkg:deb/debian/helper-scripts",
+        "pkg:deb/debian/libcap2-bin",
+        "pkg:deb/debian/libdbus-1-dev",
+        "pkg:deb/debian/libglib2.0-bin",
+        "pkg:deb/debian/libpam-modules-bin",
+        "pkg:deb/debian/libpam-runtime",
+        "pkg:deb/debian/libpam-umask",
+        "pkg:deb/debian/libsystemd-dev",
+        "pkg:deb/debian/memlockd",
+        "pkg:deb/debian/pkgconf",
+        "pkg:deb/debian/python3",
+        "pkg:deb/debian/secure-delete"
+      ],
+      "ref": "pkg:deb/debian/security-misc-shared@3:54.2-1"
+    }
+  ],
+  "metadata": {
+    "component": {
+      "bom-ref": "pkg:deb/debian/security-misc-shared@3:54.2-1",
+      "name": "security-misc-shared",
+      "purl": "pkg:deb/debian/security-misc-shared@3:54.2-1",
+      "type": "application",
+      "version": "3:54.2-1"
+    },
+    "properties": [
+      {
+        "name": "genmkfile:sbom:source",
+        "value": "debian/control top-level dependencies (Pre-Depends, Depends)"
+      },
+      {
+        "name": "genmkfile:sbom:tier",
+        "value": "declared-floor"
+      }
+    ]
+  },
+  "specVersion": "1.6",
+  "version": 1
+}

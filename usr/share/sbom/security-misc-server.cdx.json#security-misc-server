@@ -1,0 +1,44 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "components": [
+    {
+      "bom-ref": "pkg:deb/debian/security-misc-shared",
+      "name": "security-misc-shared",
+      "purl": "pkg:deb/debian/security-misc-shared",
+      "type": "library"
+    }
+  ],
+  "dependencies": [
+    {
+      "dependsOn": [
+        "pkg:deb/debian/security-misc-shared"
+      ],
+      "ref": "pkg:deb/debian/security-misc-server@3:54.2-1"
+    },
+    {
+      "ref": "pkg:deb/debian/security-misc-shared"
+    }
+  ],
+  "metadata": {
+    "component": {
+      "bom-ref": "pkg:deb/debian/security-misc-server@3:54.2-1",
+      "name": "security-misc-server",
+      "purl": "pkg:deb/debian/security-misc-server@3:54.2-1",
+      "type": "application",
+      "version": "3:54.2-1"
+    },
+    "properties": [
+      {
+        "name": "genmkfile:sbom:source",
+        "value": "debian/control top-level dependencies (Pre-Depends, Depends)"
+      },
+      {
+        "name": "genmkfile:sbom:tier",
+        "value": "declared-floor"
+      }
+    ]
+  },
+  "specVersion": "1.6",
+  "version": 1
+}

@@ -241,13 +241,9 @@ void launch_frontend_process(const char *mode_opt, char **uri_list,
 
 dbus_cleanup:
   /* Don't free the elements of arg_arr, they are not freeable. */
-  if (arg_arr != NULL) {
-    free(arg_arr);
-  }
+  free(arg_arr);
   /* Ditto for env_arr */
-  if (env_arr != NULL) {
-    free(env_arr);
-  }
+  free(env_arr);
   if (inner_iter_typesig != NULL) {
     dbus_free(inner_iter_typesig);
   }

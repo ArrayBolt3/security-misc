@@ -6,6 +6,10 @@
 ## style-ok: no-has - has.bsh isn't reliably available in maintainer scripts
 ## style-ok: no-strict - full strict block could leak into APT/debconf
 
+## DPKG_MAINTSCRIPT_NAME / DPKG_MAINTSCRIPT_PACKAGE are exported by dpkg into
+## the maintainer-script environment.
+# shellcheck disable=SC2154
+
 if [ -f /usr/libexec/helper-scripts/pre.bsh ]; then
    source /usr/libexec/helper-scripts/pre.bsh
 fi
@@ -132,6 +136,33 @@ build_emerg_shutdown() {
   /usr/libexec/security-misc/build-emerg-shutdown
 }
 
+activate_pam_namespace_backing() {
+  ## pam-auth-update has just woven pam_namespace (required) into the session
+  ## stack, but its backing tmpfs (/run/pam-namespace) and the 0000
+  ## instance-parent directories do not exist until the mount unit and
+  ## systemd-tmpfiles run - which otherwise happens only at the next boot. On a
+  ## LIVE install that gap denies EVERY new login (the module is required) until
+  ## reboot. Create both now so logins keep working immediately.
+  ##
+  ## In an image-build chroot /run/systemd/system is absent: skip - the boot
+  ## sequence (mount unit ordered before systemd-tmpfiles-setup) handles it.
+  if [ ! -d /run/systemd/system ]; then
+    return 0
+  fi
+
+  ## Mount the dedicated hardened tmpfs directly, NOT via systemctl: lintian
+  ## discourages systemctl in maintscripts, and policy-rc.d would defer a unit
+  ## start anyway. The options MUST match run-pam\x2dnamespace.mount (the
+  ## boot-time source of truth); at the next boot that unit mounts it instead.
+  if ! mountpoint -q /run/pam-namespace ; then
+    mount -t tmpfs -o nosuid,nodev,noexec,mode=0755,size=50% tmpfs /run/pam-namespace || true
+  fi
+
+  ## Create the 0000 instance-parents (/tmp, /dev/shm on the tmpfs; /var/tmp on
+  ## disk) that pam_namespace requires to pre-exist.
+  systemd-tmpfiles --create /usr/lib/tmpfiles.d/30_security-misc-polyinstantiation.conf || true
+}
+
 case "$1" in
     configure)
         if [ -d /etc/skel/.gnupg ]; then
@@ -218,6 +249,14 @@ true "INFO: debhelper beginning here."
 #DEBHELPER#
 
 true "INFO: Done with debhelper."
+
+## After the debhelper-generated section (the mount unit is now known to
+## systemd): close the install-to-reboot window in which pam_namespace is woven
+## 'required' but its backing tmpfs and instance-parents do not yet exist. No-op
+## in an image-build chroot.
+if [ "$1" = "configure" ]; then
+    activate_pam_namespace_backing
+fi
 
 permission_hardening_legacy_config_folder
 

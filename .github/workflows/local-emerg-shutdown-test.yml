@@ -1,0 +1,62 @@
+---
+## Copyright (C) 2026 - 2026 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
+## See the file COPYING for copying conditions.
+
+## AI-Assisted
+
+## Regression test for emerg-shutdown.c build_input_path().
+##
+## Scope is intentionally narrow: it exercises the bounded construction
+## of the "/dev/input/eventN" path under AddressSanitizer, guarding the
+## cpp/unsafe-strcat overflow that CodeQL flagged. See
+## ci/tests/emerg_shutdown/test_input_path.c.
+
+## FIXME: The actual scripts run here should be in dist-ai.
+
+## WARNING: The new test scripts will not be reviewed by humans as they are
+## slated to be moved to dist-ai. This workflow file has been reviewed.
+
+name: Test emerg-shutdown
+
+on:
+  push:
+    branches: [master, ai]
+  pull_request:
+    branches: [master, ai]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test emerg-shutdown
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    ## CI runs only where we enabled it; ANDed with the existing guard.
+    ## Unset variable -> skipped, no runner, run stays green.
+    if: >-
+      vars.CI_ENABLED_ORG_AI_ASSISTED == 'true'
+      && (github.event.pull_request.head.repo.full_name == github.repository || github.event_name != 'pull_request')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+
+      ## emerg-shutdown.c includes kernel uapi headers (linux/input.h,
+      ## linux/netlink.h, ...); linux-libc-dev + libc6-dev provide them.
+      - name: Install build dependencies
+        run: |
+          sudo --non-interactive apt-get update --error-on=any
+          sudo --non-interactive apt-get install --yes --no-install-recommends \
+            gcc libc6-dev linux-libc-dev
+
+      - name: build_input_path ASan regression test
+        run: ci/tests/emerg_shutdown/run.sh

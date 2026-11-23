@@ -3,15 +3,22 @@
 ## Copyright (C) 2012 - 2025 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
 ## See the file COPYING for copying conditions.
 
+## style-ok: no-has - has.bsh isn't reliably available in maintainer scripts
+## style-ok: no-strict - full strict block could leak into APT/debconf
+
+## DPKG_MAINTSCRIPT_NAME / DPKG_MAINTSCRIPT_PACKAGE are exported by dpkg at
+## maintainer-script runtime; the isolated style gate cannot see that.
+# shellcheck disable=SC2154
+
 if [ -f /usr/libexec/helper-scripts/pre.bsh ]; then
    source /usr/libexec/helper-scripts/pre.bsh
 fi
 
-set -e
+set -o errexit
 
 true "
 #####################################################################
-## INFO: BEGIN: $DPKG_MAINTSCRIPT_PACKAGE $DPKG_MAINTSCRIPT_NAME $@
+## INFO: BEGIN: ${DPKG_MAINTSCRIPT_PACKAGE} ${DPKG_MAINTSCRIPT_NAME} $*
 #####################################################################
 "
 
@@ -23,6 +30,7 @@ if [ "$1" = remove ]; then
       console-lockdown-security-misc \
       faillock-preauth-security-misc \
       mkhomedir-security-misc \
+      namespace-security-misc \
       pam-abort-on-locked-password-security-misc \
       umask-security-misc \
       unix-faillock-security-misc \
@@ -37,7 +45,7 @@ true "INFO: Done with debhelper."
 
 true "
 #####################################################################
-## INFO: END  : $DPKG_MAINTSCRIPT_PACKAGE $DPKG_MAINTSCRIPT_NAME $@
+## INFO: END  : ${DPKG_MAINTSCRIPT_PACKAGE} ${DPKG_MAINTSCRIPT_NAME} $*
 #####################################################################
 "
 

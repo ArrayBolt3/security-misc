@@ -759,6 +759,70 @@ See:
 
 - `/usr/share/pam-configs/umask-security-misc`
 
+#### Polyinstantiated temporary directories
+
+The shared, world-writable temporary directories `/tmp`, `/var/tmp`, and
+`/dev/shm` are polyinstantiated per account using the PAM module
+`pam_namespace`, so one account cannot see, read, race, or predict another
+account's temporary files.
+
+This is stronger than `libpam-tmpdir`, which only sets `$TMPDIR` / `$TMP` and
+is bypassed by any program that hardcodes `/tmp`. `libpam-tmpdir` is kept as
+complementary defense in depth: `pam_namespace` is ordered before it, so
+`$TMPDIR` is set inside the already-private `/tmp`.
+
+All three directories use the `user` method: one instance per account, shared
+across all of that account's PAM sessions. This deliberately includes the
+non-interactive stack (`common-session-noninteractive`), so the `systemd --user`
+manager and cron jobs see the same instance as the interactive login session -
+otherwise, since `systemd --user` runs in its own mount namespace, its services'
+temporary files would land in the global directories (systemd commit `0ef48896`
+documents that `systemd --user` needs its own `pam_namespace` call). `root` is
+excluded, so `su`/`sudo` to root is a no-op. The `unmnt_remnt` flag is
+deliberately not used: for the `user` method, `su` to another account stacks
+that account's instance in the session's own mount namespace (the top mount
+wins and is reclaimed on teardown), so nesting is harmless; `unmnt_remnt` would
+instead `umount` each polydir unconditionally, logging a benign `EINVAL` for
+the on-disk `/var/tmp` in daemon sessions where it is not a mountpoint.
+
+Backing store per directory:
+
+- `/tmp` and `/dev/shm` instances live on a dedicated tmpfs mounted
+  `nosuid,nodev,noexec` (`/run/pam-namespace`, unit `run-pam\x2dnamespace.mount`).
+  They are therefore RAM-backed and wiped at every reboot (matching Debian's
+  `/tmp` convention), and the hardened mount options are inherited through the
+  bind mount - the `user` method cannot set `mntopts` itself, unlike the `tmpfs`
+  method, and a boot-time global remount cannot reach a mount created later, so
+  this dedicated tmpfs is how `/tmp` and `/dev/shm` get `noexec` to mirror the
+  system's global mount-hardening policy.
+- `/var/tmp` uses an on-disk per-account instance under `/var/tmp/tmp-inst/`,
+  which persists across reboots per FHS.
+
+The user's home directory is deliberately not polyinstantiated - that would
+hide the user's own data and only makes sense on SELinux MLS systems. Because a
+freshly created `/tmp` instance has no X11/ICE socket directories, an instance
+init script recreates `/tmp/.X11-unix` and `/tmp/.ICE-unix` mode `1777`.
+
+Activation and reboot: on a freshly built image the feature activates on first
+boot (the mount unit is ordered before `systemd-tmpfiles-setup`, which creates
+the instance-parent directories, both before any user session). When the package
+is instead installed or upgraded on an already-running system, the `postinst`
+mounts the backing tmpfs and creates the instance-parents immediately, so new
+logins are never denied by the just-woven (`required`) module. A reboot is still
+recommended after such an install, because `pam_namespace` only applies to *new*
+sessions: any session already open - including the running `systemd --user`
+manager - keeps its pre-existing view of `/tmp`, `/var/tmp`, and `/dev/shm`
+until it is restarted or the system is rebooted.
+
+See:
+
+- `/usr/share/pam-configs/namespace-security-misc`
+- `/etc/security/namespace.d/30_security-misc.conf`
+- `/usr/libexec/security-misc/pam-namespace-init`
+- `/usr/lib/tmpfiles.d/30_security-misc-polyinstantiation.conf`
+- `/usr/lib/systemd/system/run-pam\x2dnamespace.mount`
+- https://www.kicksecure.com/wiki/Dev/Strong_Linux_User_Account_Isolation
+
 ### SUID / SGID removal and permission hardening
 
 #### SUID / SGID removal

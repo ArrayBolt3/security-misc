@@ -1,0 +1,25 @@
+## Copyright (C) 2025 - 2025 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
+## See the file COPYING for copying conditions.
+
+## AI-Assisted
+
+## Instance-parent directories for pam_namespace polyinstantiation
+## (/etc/security/namespace.d/30_security-misc.conf).
+##
+## pam_namespace requires each instance_prefix parent to pre-exist, owned
+## root:root, mode 0000 (the restrictive mode is the isolation guarantee; a
+## laxer mode would let one account reach another's instance).
+##
+## /tmp and /dev/shm instances live on the dedicated hardened tmpfs
+## /run/pam-namespace (run-pam\x2dnamespace.mount); it is a fresh tmpfs at every
+## boot, so these two parents are recreated here each boot (the mount unit is
+## ordered before systemd-tmpfiles-setup). /var/tmp is on-disk and persistent:
+## Debian ships 'q /var/tmp 1777 root root 30d', whose age cleanup would wipe
+## the instances and eventually rmdir the parent (denying login, as the module
+## is required), so the 'x' line excludes that subtree from age cleanup.
+##
+## man tmpfiles.d
+d /run/pam-namespace/tmp-inst  0000 root root -
+d /run/pam-namespace/shm-inst  0000 root root -
+d /var/tmp/tmp-inst            0000 root root -
+x /var/tmp/tmp-inst

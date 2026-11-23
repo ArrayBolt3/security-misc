@@ -91,6 +91,38 @@ dev.tty.ldisc_autoload=0
 ##
 vm.unprivileged_userfaultfd=0
 
+## Harden memfd_create(): default new anonymous memfds to non-executable,
+## execute-sealed memory and reject explicit MFD_EXEC.
+## Targets the common fileless-execution pattern that bypasses noexec mounts:
+## memfd_create() followed by execveat()/fexecve() of the anonymous fd. At value
+## 2 a default memfd cannot be run via the exec syscalls, and its execute mode
+## bit cannot be set with chmod.
+## This is a bar-raiser, NOT write-xor-execute. Verified on Linux 6.12: an
+## executable mapping of such a memfd is still obtainable via mmap(PROT_EXEC) or
+## mprotect. That is by design: Linux has no system-wide W^X knob, so closing the
+## executable-memory vector needs an LSM (for example SELinux execmem) or
+## per-service seccomp (systemd MemoryDenyWriteExecute=), not this sysctl alone.
+## A second path -- adding the execute bit through a POSIX ACL (setfacl), which
+## F_SEAL_EXEC failed to cover -- was a kernel seal-coverage bug, fixed in Linux
+## 6.18 by commit 0237c47ca170 ("mm/shmem: honour F_SEAL_EXEC when an ACL is
+## set", Cc: stable). It stays exploitable until that fix reaches the running
+## kernel.
+## Side effect: at value 1 and 2 a default memfd is created sealable
+## (MFD_ALLOW_SEALING is implied), so a peer holding the fd can add write or
+## shrink seals that a value 0 default memfd would refuse.
+## Available since Linux 6.3. Per-PID-namespace: a child namespace (sandbox or
+## container) cannot weaken a stricter host value.
+## May break software that runs code from a memfd via the exec syscalls, such as
+## some container runtimes that re-execute themselves via memfd. To relax, add a
+## drop-in whose filename sorts after this one (for example
+## /etc/sysctl.d/991-memfd.conf) with vm.memfd_noexec=1 or =0; a 99-* or
+## lower-numbered name is applied before 990-security-misc.conf and has no effect.
+##
+## https://docs.kernel.org/userspace-api/mfd_noexec.html
+## https://man7.org/linux/man-pages/man2/memfd_create.2.html
+##
+vm.memfd_noexec=2
+
 ## Disables kexec, which can be used to replace the running kernel.
 ## Useful for live kernel patching without rebooting.
 ##

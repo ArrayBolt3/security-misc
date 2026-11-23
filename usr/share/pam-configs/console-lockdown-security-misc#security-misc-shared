@@ -4,4 +4,4 @@ Priority: 280
 Account-Type: Primary
 Account:
 	[success=1 default=ignore]	pam_exec.so	seteuid quiet quiet_log /usr/libexec/security-misc/pam_only_if_login
-	required	pam_access.so accessfile=/etc/security/access-security-misc.conf debug
+	required	pam_access.so accessfile=/etc/security/access-security-misc.conf nodns debug

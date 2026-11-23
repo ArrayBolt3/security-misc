@@ -1,0 +1,46 @@
+## Copyright (C) 2025 - 2025 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
+## See the file COPYING for copying conditions.
+
+## AI-Assisted
+
+## Per-account polyinstantiation of shared, world-writable temporary
+## directories using pam_namespace. Drop-in; parsed after the libpam-modules
+## default /etc/security/namespace.conf.
+##
+## Goal: a user must not see, read, race, or predict another account's temp
+## files in /tmp, /var/tmp, /dev/shm. libpam-tmpdir only sets $TMPDIR and is
+## bypassed by any program that hardcodes /tmp - pam_namespace gives a real
+## private mount, so hardcoded /tmp is isolated too.
+##
+## Method 'user': ONE instance per account, shared across ALL of that account's
+## PAM sessions - interactive login, the systemd --user manager, and cron - so
+## they agree on /tmp and /dev/shm (no systemd --user split; background-service
+## temp files are isolated too). This requires pam_namespace to run in the
+## non-interactive stack as well, so the pam-config is NOT interactive-only (see
+## namespace-security-misc). No unmnt_remnt flag: for the 'user' method su
+## nesting stacks the new account's instance in the session's own mount
+## namespace (top mount wins, reclaimed on teardown), and unmnt_remnt would do
+## an unconditional umount of each polydir that logs a benign EINVAL for the
+## on-disk /var/tmp in daemon sessions (privleapd) where it is not a mountpoint.
+##
+## Columns: polydir  instance_prefix  method[:flags]  excluded_users
+##   - /tmp, /dev/shm instances live on a dedicated nosuid,nodev,noexec tmpfs
+##     (/run/pam-namespace, run-pam\x2dnamespace.mount): RAM-backed, wiped at
+##     reboot, and the hardened mount options are inherited through the bind
+##     (the 'user' method cannot set mntopts itself, unlike 'tmpfs'). noexec
+##     mirrors the system's global mount-hardening policy for /tmp and /dev/shm.
+##   - /var/tmp uses an on-disk per-account instance (FHS: persists at reboot).
+##   - root is excluded so system/daemon logins keep the shared dirs. Only
+##     accounts that EXIST may be listed here: pam_namespace logs "Unknown user
+##     <name> in configuration" per session otherwise (Debian has no 'adm' user).
+##
+## iscript on /tmp recreates the X11/ICE socket dirs inside a freshly created
+## instance (see pam-namespace-init). $HOME is deliberately NOT polyinstantiated
+## - that would hide the user's own data and only makes sense on SELinux MLS.
+##
+## https://www.kicksecure.com/wiki/Dev/Strong_Linux_User_Account_Isolation
+## man namespace.conf
+
+/tmp       /run/pam-namespace/tmp-inst/   user:iscript=/usr/libexec/security-misc/pam-namespace-init   root
+/var/tmp   /var/tmp/tmp-inst/             user   root
+/dev/shm   /run/pam-namespace/shm-inst/   user   root

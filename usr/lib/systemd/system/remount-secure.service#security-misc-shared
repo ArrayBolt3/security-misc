@@ -5,8 +5,10 @@
 Description=remount /home /tmp /dev/shm /run with nosuid,nodev (default) and noexec (opt-in)
 Documentation=https://github.com/Kicksecure/security-misc
 
-ConditionKernelCommandLine=!remountsecure=0
-
+## No ConditionKernelCommandLine for remountsecure=0: the script reads the level
+## from the kernel command line with last-occurrence-wins semantics (level 0
+## exits without hardening). A systemd condition matches any occurrence, not the
+## last, so it would disagree with the script on e.g. "remountsecure=0 remountsecure=3".
 DefaultDependencies=no
 
 Before=sysinit-post.target
@@ -26,7 +28,7 @@ Requires=sysinit.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=remount-secure 3
+ExecStart=remount-secure
 
 [Install]
 WantedBy=sysinit-post.target
