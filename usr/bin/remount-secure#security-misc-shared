@@ -42,6 +42,10 @@ shopt -s shift_verbose
 export LC_ALL=C
 
 init() {
+   running_as_root='false'
+   most_noexec_maybe=''
+   home_noexec_maybe=''
+
    if test -o xtrace ; then
       output_command=( true )
    else
@@ -50,29 +54,23 @@ init() {
 
    "${output_command[@]}" "$0: INFO: START"
 
-   ## --check audits mount options read-only: it never mounts and never writes
-   ## the run markers, so it needs neither root nor the /run state directory.
-   if [ "${option_check}" != "true" ]; then
-      ## dracut does not have id. Saving space in initial ramdisk.
-      if command -v id &>/dev/null ; then
-         if [ "$(id -u)" != "0" ]; then
-            "${output_command[@]}" "ERROR: must be run as root! sudo $0"
-            exit 1
-         fi
-      fi
-
-      mkdir --parents "/run/remount-secure"
-   fi
-   exit_code=0
-   deviation_count=0
-
    ## dracut sets NEWROOT=/sysroot
    [[ -v NEWROOT ]] || NEWROOT=""
    if [ "${NEWROOT}" = "" ]; then
       "${output_command[@]}" "INFO: dracut detected: no"
+      if [ "$(id -u)" = "0" ]; then
+         running_as_root='true'
+         mkdir --parents -- "/run/remount-secure"
+      fi
    else
       "${output_command[@]}" "INFO: dracut detected: yes - NEWROOT: '${NEWROOT}'"
+      ## dracut does not have id. Saving space in initial ramdisk.
+      running_as_root='true'
+      mkdir --parents -- "/run/remount-secure"
    fi
+
+   exit_code=0
+   deviation_count=0
 
    ## Debugging.
    #echo "ls -la /root/"
@@ -83,6 +81,39 @@ init() {
    #env || true
 }
 
+require_root_maybe() {
+   if [ "${option_check}" = "false" ] \
+      && [ "${running_as_root}" = 'false' ]; then
+      "${output_command[@]}" "ERROR: must be run as root unless using --check! sudo $0"
+      exit 1
+   fi
+}
+
+level_to_mount_options() {
+   case "${1:-}" in
+      0)
+         "${output_command[@]}" "WARNING: Not using remount-secure."
+         exit 0
+         ;;
+      1)
+         "${output_command[@]}" "INFO: level 1/3 (low)"
+         ;;
+      2)
+         "${output_command[@]}" "INFO: level 2/3 (medium)"
+         most_noexec_maybe=",noexec"
+         ;;
+      3)
+         "${output_command[@]}" "INFO: level 3/3 (high)"
+         most_noexec_maybe=",noexec"
+         home_noexec_maybe=",noexec"
+         ;;
+      *)
+         "${output_command[@]}" "ERROR: Unrecognized level '${1}'!"
+         exit 1
+         ;;
+   esac
+}
+
 parse_options() {
    ## Thanks to:
    ## https://mywiki.wooledge.org/BashFAQ/035
@@ -90,34 +121,12 @@ parse_options() {
    while :
    do
        case ${1:-} in
-           0)
-               "${output_command[@]}" "WARNING: Not using remount-secure."
-               exit 0
-               shift
-               ;;
-           1)
-               "${output_command[@]}" "INFO: level 1/3 (low)"
-               most_noexec_maybe=""
-               home_noexec_maybe=""
-               parsed=true
-               shift
-               ;;
-           2)
-               "${output_command[@]}" "INFO: level 2/3 (medium)"
-               most_noexec_maybe=",noexec"
-               home_noexec_maybe=""
-               parsed=true
-               shift
-               ;;
-           3)
-               "${output_command[@]}" "INFO: level 3/3 (high)"
-               most_noexec_maybe=",noexec"
-               home_noexec_maybe=",noexec"
-               parsed=true
+           0|1|2|3)
+               level_to_mount_options "${1}"
                shift
                ;;
            --check)
-               "${output_command[@]}" "INFO: --check (audit only, no remount)"
+               "${output_command[@]}" "INFO: --check (audit only)"
                option_check=true
                parsed=true
                shift
@@ -141,8 +150,8 @@ parse_options() {
        esac
    done
 
-   [[ -v option_force ]] || option_force=""
    [[ -v option_check ]] || option_check=false
+   [[ -v option_force ]] || option_force=""
    [[ -v parsed ]] || parsed=false
    [[ -v home_noexec_maybe ]] || home_noexec_maybe=""
    [[ -v most_noexec_maybe ]] || most_noexec_maybe=""
@@ -161,6 +170,30 @@ parse_options() {
    else
       "${output_command[@]}" "INFO: using noexec for most (not all): yes"
       return 0
+   fi
+
+   if [ "${parsed}" = 'false' ]; then
+      if [ "${option_check}" = 'true' ]; then
+         level_to_mount_options 3
+         parsed='true'
+      else
+         local cmdline
+         cmdline=''
+         if [ -r /proc/cmdline ]; then
+            read -r cmdline < /proc/cmdline || true
+         elif [ -r /proc/1/cmdline ]; then
+            cmdline="$(tr '\0' ' ' < /proc/1/cmdline)" || true
+         fi
+         if [[ "${cmdline}" =~ (^| )"remountsecure"(=([^ ]*)?)?($| ) ]]; then
+            if [ -n "${BASH_REMATCH[3]:-}" ] \
+               && [[ "${BASH_REMATCH[3]}" =~ ^(0|1|2|3)$ ]]; then
+               level_to_mount_options "${BASH_REMATCH[3]}"
+            else
+               level_to_mount_options 3
+            fi
+            parsed='true'
+         fi
+      fi
    fi
 
    if [ "${parsed}" = "true" ]; then
@@ -234,10 +267,8 @@ remount_secure() {
       "${output_command[@]}" "INFO: Executing: mount --make-private --options remount,${intended_mount_options} ${mount_folder}"
       mount --make-private --options "remount,${intended_mount_options}" "${mount_folder}" || exit_code=100
    else
-      "${output_command[@]}" "INFO: '${mount_folder}' not yet mounted, therefore using recursive mount bind."
+      "${output_command[@]}" "INFO: '${mount_folder}' not yet mounted, therefore using recursive bind mount."
       "${output_command[@]}" "INFO: Executing: mount --make-private --options ${intended_mount_options} --rbind ${mount_folder} ${mount_folder}"
-      ## rbind (recursive) rather than bind: a plain bind of a directory hides any
-      ## submounts underneath it. Each submount is hardened by its own policy entry.
       mount --make-private --options "${intended_mount_options}" --rbind "${mount_folder}" "${mount_folder}" || exit_code=101
    fi
 
@@ -248,44 +279,19 @@ remount_secure() {
 }
 
 audit_mount_options() {
-   ## Read-only verification for --check: compare the EFFECTIVE mount options of
-   ## ${mount_folder} against ${intended_mount_options} as a SET (every intended
-   ## option must be present; extra live options are fine). Report and count
-   ## deviations; never remount, never consult or write the run-once markers.
-   ##
-   ## findmnt --target reads the kernel mount table, which is what makes a
-   ## correct rootless audit possible:
-   ## - it resolves a path that is not itself a separate mountpoint to the
-   ##   covering mount (a non-separate /home inherits / and must still satisfy
-   ##   policy -- an exact-match lookup would skip it and pass a permissive
-   ##   parent silently),
-   ## - it works WITHOUT directory-traversal permission, so a rootless audit
-   ##   still sees /boot/efi even when /boot is mode 0700 (the hardened default);
-   ##   a plain 'test -d' would fail with EACCES there and wrongly skip it, and
-   ## - it lists stacked mounts in kernel order, so the EFFECTIVE (topmost) mount
-   ##   is the LAST row -- tail it; '--first-only' would read the wrong (shadowed)
-   ##   lower mount whose options could falsely satisfy policy.
-   ## Exit status: 0 = found; 1 = no mount for this path (absent -> N/A);
-   ## anything else (e.g. 127 when findmnt itself is missing) = cannot verify ->
-   ## fail CLOSED.
    local live_options intended_rest intended_option missing findmnt_rc
 
    findmnt_rc=0
-   live_options="$(findmnt --noheadings --output options --target "${mount_folder}" | tail -n 1)" || findmnt_rc=$?
+   live_options="$(findmnt --noheadings --output options --target "${mount_folder}" | tail -n 1)" || findmnt_rc="$?"
 
-   if [ "${findmnt_rc}" = "1" ] ; then
-      "${output_command[@]}" "N/A: '${mount_folder}' no mount found"
-      return 0
-   fi
+   ## findmnt always exits 1 for any error.
+   ## live_options should always contain at least "ro" or "rw".
    if [ "${findmnt_rc}" != "0" ] || [ -z "${live_options}" ] ; then
-      "${output_command[@]}" "DEVIATION: '${mount_folder}' mount options unreadable (findmnt rc: '${findmnt_rc}')"
+      "${output_command[@]}" "DEVIATION: '${mount_folder}' error reading mount options (findmnt rc: '${findmnt_rc}')"
       deviation_count=$((deviation_count + 1))
       return 0
    fi
 
-   ## Set-membership test via case keeps intended tokens (our own hardcoded
-   ## nosuid/nodev/noexec/...) as literal patterns and avoids array-subscript
-   ## eval on the live option string (R-141).
    missing=""
    intended_rest="${intended_mount_options}"
    while [ -n "${intended_rest}" ] ; do
@@ -310,6 +316,10 @@ audit_mount_options() {
       deviation_count=$((deviation_count + 1))
    else
       "${output_command[@]}" "OK: '${mount_folder}' has intended mount options ('${intended_mount_options}')"
+   fi
+
+   if [ "${deviation_count}" -gt 0 ] ; then
+      exit_code=1
    fi
 }
 
@@ -375,6 +385,10 @@ _var_log() {
 
 _var_cache() {
    mount_folder="${NEWROOT}/var/cache"
+   ## TODO: This will break vbox-guest-installer, as it extracts the Guest
+   ## Additions installer to
+   ## /var/cache/vm-config-dist/vbox-guest-additions-extracted-makeself, then
+   ## runs it from there. Should we really allow this to be noexec?
    intended_mount_options="nosuid,nodev${most_noexec_maybe}"
    remount_secure
 }
@@ -451,110 +465,16 @@ end() {
    #"${output_command[@]}" "INFO: 'findmnt --list' output at the END."
    #"${output_command[@]}" "$(findmnt --list)"
 
-   if [ "${option_check}" = "true" ] ; then
-      ## Audit verdict is machine-readable via the exit code: nonzero iff any
-      ## mountpoint deviated from its intended options.
-      if [ "${deviation_count}" -gt 0 ] ; then
-         exit_code=1
-      else
-         exit_code=0
-      fi
-   fi
-
    "${output_command[@]}" ""
    "${output_command[@]}" "INFO: exit_code: ${exit_code}"
    "${output_command[@]}" "$0: INFO: END"
    exit "${exit_code}"
 }
 
-level_arg_present() {
-   ## True if an explicit numeric level (0, 1, 2 or 3) is among the arguments.
-   local arg
-   for arg in "$@" ; do
-      case "${arg}" in
-         --)
-            break
-            ;;
-         0|1|2|3)
-            return 0
-            ;;
-      esac
-   done
-   return 1
-}
-
-option_check_present() {
-   ## True if --check (audit-only mode) is among the arguments, before any
-   ## -- separator.
-   local arg
-   for arg in "$@" ; do
-      case "${arg}" in
-         --)
-            break
-            ;;
-         --check)
-            return 0
-            ;;
-      esac
-   done
-   return 1
-}
-
-cmdline_level() {
-   ## Honor the remountsecure= kernel parameter so the levels documented in
-   ## /etc/default/grub.d/40_remount_secure.cfg take effect. Last occurrence
-   ## wins (as dracut getarg). Falls back to /proc/1/cmdline where /proc/cmdline
-   ## is absent (containers). Only 0..3 are accepted; defaults to 3 (high).
-   local level cmdline tokens token value
-   level=3
-   cmdline=""
-   if [ -r /proc/cmdline ]; then
-      read -r cmdline < /proc/cmdline || true
-   elif [ -r /proc/1/cmdline ]; then
-      cmdline="$(tr '\0' ' ' < /proc/1/cmdline)" || true
-   fi
-   tokens=()
-   read -r -a tokens <<< "${cmdline}" || true
-   for token in "${tokens[@]}" ; do
-      case "${token}" in
-         remountsecure=*)
-            value="${token#remountsecure=}"
-            case "${value}" in
-               0|1|2|3)
-                  level="${value}"
-                  ;;
-               *)
-                  ## An invalid last assignment fails safe to the highest level.
-                  level=3
-                  ;;
-            esac
-            ;;
-      esac
-   done
-   printf '%s' "${level}"
-}
-
 main() {
-   ## Detected before init so the root/state-dir setup can be skipped for an
-   ## audit-only run.
-   if option_check_present "$@" ; then
-      option_check=true
-   else
-      option_check=false
-   fi
-
    init
-   ## An explicit numeric argument (dracut, manual use) wins. --check audits the
-   ## strict level-3 baseline unless a level is given; otherwise honor
-   ## remountsecure= from the kernel command line (default level 3).
-   if ! level_arg_present "$@" ; then
-      if [ "${option_check}" = "true" ] ; then
-         set -- 3 "$@"
-      else
-         set -- "$(cmdline_level)" "$@"
-      fi
-   fi
    parse_options "$@"
+   require_root_maybe
    preparation
 
    _boot

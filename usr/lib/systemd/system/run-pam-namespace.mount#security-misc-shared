@@ -1,0 +1,20 @@
+## Copyright (C) 2026 - 2026 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
+## See the file COPYING for copying conditions.
+
+## AI-Assisted
+
+[Unit]
+Description=Hardened tmpfs for pam_namespace polyinstantiation instances
+DefaultDependencies=no
+Before=local-fs.target systemd-tmpfiles-setup.service systemd-user-sessions.service
+Conflicts=umount.target
+Before=umount.target
+
+[Mount]
+What=tmpfs
+Where=/run/pam-namespace
+Type=tmpfs
+Options=nosuid,nodev,noexec,mode=0000,size=50%%
+
+[Install]
+WantedBy=local-fs.target

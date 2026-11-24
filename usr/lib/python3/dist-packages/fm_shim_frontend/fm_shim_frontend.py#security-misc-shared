@@ -706,9 +706,6 @@ def main() -> NoReturn:
         print("ERROR: All provided URIs were invalid!", file=sys.stderr)
         sys.exit(1)
 
-    ## Constructing a QApplication on a machine with no display SIGABRTs
-    ## (exit 134, uncatchable C++ qFatal). Exit cleanly instead when headless.
-    ## Must run after arg parsing and before the QApplication below.
     exit_if_no_gui()
 
     app: QApplication = QApplication(sys.argv)

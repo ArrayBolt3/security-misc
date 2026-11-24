@@ -4,10 +4,9 @@
 ## See the file COPYING for copying conditions.
 
 ## style-ok: no-has - has.bsh isn't reliably available in maintainer scripts
-## style-ok: no-strict - full strict block could leak into APT/debconf
+## style-ok: no-strict - maintainer script.
 
-## DPKG_MAINTSCRIPT_NAME / DPKG_MAINTSCRIPT_PACKAGE are exported by dpkg at
-## maintainer-script runtime; the isolated style gate cannot see that.
+## DPKG_MAINTSCRIPT_NAME / DPKG_MAINTSCRIPT_PACKAGE are exported by dpkg.
 # shellcheck disable=SC2154
 
 if [ -f /usr/libexec/helper-scripts/pre.bsh ]; then

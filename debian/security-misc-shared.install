@@ -145,7 +145,6 @@ usr/share/pam-configs/umask-security-misc#security-misc-shared => /usr/share/pam
 usr/share/pam-configs/unix-faillock-security-misc#security-misc-shared => /usr/share/pam-configs/unix-faillock-security-misc
 usr/share/pam-configs/wheel-security-misc#security-misc-shared => /usr/share/pam-configs/wheel-security-misc
 usr/share/polkit-1/actions/org.freedesktop.Flatpak.policy.security-misc#security-misc-shared => /usr/share/polkit-1/actions/org.freedesktop.Flatpak.policy.security-misc
-usr/share/sbom/security-misc-shared.cdx.json#security-misc-shared => /usr/share/sbom/security-misc-shared.cdx.json
 usr/share/security-misc/dolphinrc#security-misc-shared => /usr/share/security-misc/dolphinrc
 usr/share/security-misc/emerg-shutdown-initramfs.service#security-misc-shared => /usr/share/security-misc/emerg-shutdown-initramfs.service
 usr/share/security-misc/lkrg/30-lkrg-virtualbox.conf#security-misc-shared => /usr/share/security-misc/lkrg/30-lkrg-virtualbox.conf
